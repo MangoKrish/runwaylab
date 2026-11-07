@@ -67,7 +67,13 @@ export function historyScreen(root) {
       done++;
       await new Promise((r) => setTimeout(r, 400)); // Browsers drop downloads started all at once.
     }
-    status.textContent = `${done} ${done === 1 ? 'video' : 'videos'} sent to your downloads.`;
+    // A list of who walked, with their socials, for tagging them in reels.
+    const rows = [['video', 'name', 'socials', 'score']].concat(walks.map((w) => [recordingName(w), w.name, w.socials || '', w.total ?? w.measuredPoints ?? '']));
+    const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    h('a', { href: url, download: 'runwaylab-walkers.csv' }).click();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    status.textContent = `${done} ${done === 1 ? 'video' : 'videos'} and a list of walkers with their socials sent to your downloads.`;
   }
 
   const choose = (label, options, value, onChange) => h('label', { class: 'rw-field rw-field--inline' },

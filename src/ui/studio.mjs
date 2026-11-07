@@ -17,7 +17,6 @@ import { createMusic } from './music.mjs';
 const MAX_SECONDS = 90;
 const CALIBRATE_MS = 1500;
 const SAVED_LAPS = 'rw-laps';
-const READY_HOLD_SECONDS = 1;
 const TRACK_EVERY_MS = 30;
 const SAVED_CAMERA = 'rw-camera';
 const SAVED_ROTATION = 'rw-rotation';
@@ -88,7 +87,7 @@ export function studioScreen(root, app) {
       problem,
       h('div', { class: 'rw-studio__options' },
         h('div', { class: 'rw-stack' },
-          h('label', { class: 'rw-check' }, handsFreeBox, h('span', null, h('strong', null, 'Hands-free. '), 'Starts when a whole person is in frame, and stops after the last walk.')),
+          h('label', { class: 'rw-check' }, handsFreeBox, h('span', null, h('strong', null, 'Stop by itself. '), 'Recording ends after the last walk. It always starts only when you press Start.')),
           h('label', { class: 'rw-field rw-field--inline' }, h('span', null, 'Score me on'), lapSelect),
           h('p', { class: 'rw-muted rw-small' }, 'You stand tall for a moment so we can calibrate to you, then walk up and back this many times. One stumble will not sink your score.')),
         consentBox),
@@ -154,8 +153,8 @@ export function studioScreen(root, app) {
         primary.append(button(s.phase === 'off' ? 'Turn on camera' : 'Try the camera again', () => turnOn(), { kind: 'solid', class: 'rw-btn rw-btn--solid rw-btn--big' }));
         break;
       case 'live':
-        if (!s.handsFree) primary.append(button('Start, with a 3 second countdown', () => beginCountdown(), { kind: 'solid', class: 'rw-btn rw-btn--solid rw-btn--big' }));
-        else primary.append(h('p', { class: 'rw-muted' }, s.tracker ? 'Waiting for someone to stand in frame.' : s.trackerFailed ? 'Tracking is not running, so hands-free cannot start. Turn it off to record by hand.' : 'Loading the pose tracker.'));
+        // Recording only ever begins here, on a press: the countdown, then the take.
+        primary.append(button('Start, with a 3 second countdown', () => beginCountdown(), { kind: 'solid', class: 'rw-btn rw-btn--solid rw-btn--big' }));
         break;
       case 'countdown':
         primary.append(button('Cancel', cancelCountdown, { class: 'rw-btn rw-btn--big' }));
@@ -392,8 +391,7 @@ export function studioScreen(root, app) {
         s.fullSince = null;
       } else {
         if (s.fullSince === null) s.fullSince = t;
-        prompt.textContent = s.handsFree ? 'Hold still' : 'You are in frame';
-        if (s.handsFree && t - s.fullSince >= READY_HOLD_SECONDS) beginCountdown();
+        prompt.textContent = 'You are in frame. Press Start';
       }
     } else if (s.phase === 'recording') {
       const calibrating = performance.now() < s.calibrateUntil;
@@ -438,9 +436,6 @@ export function studioScreen(root, app) {
   function cancelCountdown() {
     clearInterval(s.ticker);
     s.fullSince = null;
-    // Stay out of hands-free's way until the person chooses it again.
-    s.handsFree = false;
-    handsFreeBox.checked = false;
     prompt.textContent = 'Stand on your start mark';
     setPhase('live');
   }

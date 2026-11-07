@@ -548,7 +548,12 @@ async function main() {
     check('tracking starts on live video', await tab.until(`/Tracking with/.test(document.querySelector('#rw-root').innerText)`, 'tracker loaded', 60000), (await tab.fullText()).match(/Tracking with [^.]+/)?.[0]);
     await tab.shot('studio-live');
     await tab.shot('studio-full', true);
-    check('hands-free starts by itself when a person is in frame', await tab.until(`['countdown', 'recording'].includes(document.querySelector('.rw-stage').dataset.phase)`, 'hands-free start', 45000));
+    check('says when the person is in frame', await tab.until(`/in frame\. Press Start/.test(document.querySelector('.rw-stage__prompt')?.textContent || '')`, 'in frame', 45000));
+    await sleep(3000);
+    check('never starts recording by itself', (await tab.js(`document.querySelector('.rw-stage').dataset.phase`)) === 'live');
+    await tab.until(`/in frame\. Press Start/.test(document.querySelector('.rw-stage__prompt')?.textContent || '')`, 'in frame again', 45000);
+    await tab.clickButton('Start, with a 3 second countdown');
+    check('Start begins the countdown', await tab.until(`['countdown', 'recording'].includes(document.querySelector('.rw-stage').dataset.phase)`, 'countdown', 5000));
     check('recording starts after the countdown', await tab.until(`document.querySelector('.rw-stage').dataset.phase === 'recording'`, 'recording', 10000));
     const prompts = new Set();
     let shotRecording = false;

@@ -13,7 +13,7 @@ import { makeStills } from '../judge/stills.mjs';
 import { judgeStatus, requestJudgement } from '../judge/client.mjs';
 import { expectedSeconds, rememberSeconds, progressAt, timeLeftText } from '../judge/eta.mjs';
 import { saveWalk, loadWalk, deleteWalk } from '../store/db.mjs';
-import { keepOnDevice, downloadFile } from '../store/keep.mjs';
+import { keepOnDevice, downloadFile, saveSocialsFile } from '../store/keep.mjs';
 import { postToWall, removeFromWall, signIn, signOut, wallInfo } from '../wall/client.mjs';
 
 const STATUS_WORDS = {
@@ -54,6 +54,19 @@ export function reviewScreen(root, app, id) {
     renderActions();
     renderStatus();
   } });
+  // Socials, so the walker can be tagged when this walk is used in a reel. Saved with the walk on this device.
+  let socialsTimer = null;
+  const socialsInput = h('input', { class: 'rw-input rw-socials__input', type: 'text', maxlength: 80, id: 'rw-socials', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', placeholder: '@yourhandle', onInput: (e) => {
+    session.socials = e.target.value.trim();
+    session.dirty = true;
+    renderStatus();
+    clearTimeout(socialsTimer);
+    socialsTimer = setTimeout(() => { keepRecording(); saveSocialsFile(session); }, 700);
+  } });
+  const socialsField = h('div', { class: 'rw-socials' },
+    h('label', { for: 'rw-socials' }, 'Your socials, to be tagged'),
+    socialsInput,
+    h('p', { class: 'rw-muted rw-small' }, 'Optional. Instagram, TikTok or anything else. Kept with this walk on this device.'));
   const actions = h('div', { class: 'rw-actions rw-actions--top' });
   const playerSlot = h('div');
   const ribbon = h('div', { class: 'rw-ribbon' });
@@ -179,7 +192,8 @@ export function reviewScreen(root, app, id) {
         signal: run.signal,
         onProgress: (p) => {
           if (run !== analysisRun || !alive) return;
-          analysisState = { kind: 'running', ...p };
+          const trackingSince = analysisState.trackingSince ?? (p.done > 0 ? performance.now() - 1 : null);
+          analysisState = { kind: 'running', ...p, trackingSince };
           renderProgress();
         },
       });
@@ -205,11 +219,25 @@ export function reviewScreen(root, app, id) {
     }
   }
 
+  // Tracking reports how much of the video it has read, so the percentage and the time left are real.
   function renderProgress() {
     const bar = summary.querySelector('progress');
     const label = summary.querySelector('.rw-progress__label');
-    if (bar) bar.value = analysisState.done || 0;
+    const pct = summary.querySelector('.rw-progress__pct');
+    const left = summary.querySelector('.rw-progress__left');
+    const done = analysisState.done || 0;
+    if (bar) bar.value = done;
     if (label) label.textContent = analysisState.stage;
+    if (pct) pct.textContent = `${Math.floor(done * 100)}%`;
+    if (left) {
+      if (done > 0.03 && analysisState.trackingSince) {
+        const elapsed = (performance.now() - analysisState.trackingSince) / 1000;
+        const remaining = Math.max(1, Math.round((elapsed / done) * (1 - done)));
+        left.textContent = `About ${remaining} ${remaining === 1 ? 'second' : 'seconds'} left`;
+      } else {
+        left.textContent = done ? 'Working out how long this takes' : 'Getting ready';
+      }
+    }
   }
 
   // ── judging ──
@@ -414,8 +442,11 @@ export function reviewScreen(root, app, id) {
 
     if (analysisState.kind === 'running') {
       summary.append(h('div', { class: 'rw-progress' },
-        h('p', { class: 'rw-progress__label' }, analysisState.stage),
+        h('div', { class: 'rw-progress__head' },
+          h('p', { class: 'rw-progress__label' }, analysisState.stage),
+          h('span', { class: 'rw-progress__pct', 'aria-hidden': 'true' }, `${Math.floor((analysisState.done || 0) * 100)}%`)),
         h('progress', { max: 1, value: analysisState.done || 0, 'aria-label': 'Analysis progress' }),
+        h('p', { class: 'rw-progress__left rw-muted rw-small' }, 'Getting ready'),
         h('p', { class: 'rw-muted' }, 'This runs on this device. Your video stays here.'),
         button('Cancel', () => analysisRun?.abort())));
       return;
@@ -718,6 +749,7 @@ export function reviewScreen(root, app, id) {
   function build() {
     nameInput.value = session.name;
     if (session.isSample) nameInput.readOnly = true;
+    socialsInput.value = session.socials || '';
     player = session.isSample
       ? createPlayer({ analysis: session.analysis, badge: 'Synthetic figure, not a recording', label: 'A synthetic stick figure walking toward the camera, turning and walking back' })
       : createPlayer({ blob: session.blob, analysis: session.analysis, rotation: session.rotation || 0, label: `Replay of ${session.name}` });
@@ -732,7 +764,8 @@ export function reviewScreen(root, app, id) {
         h('div', { class: 'rw-reviewhead__name' },
           statusPill,
           h('h1', { class: 'rw-sr', tabindex: '-1' }, `Review: ${session.name}`),
-          nameInput),
+          nameInput,
+          session.isSample ? null : socialsField),
         actions),
       h('div', { class: 'rw-result' },
         h('div', { class: 'rw-result__media' }, playerSlot, ribbon, ribbonKey, announce),

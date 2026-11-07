@@ -95,7 +95,7 @@ const RECORDINGS = path.join(ROOT, 'recordings');
 async function keepRecording(req, res, url) {
   const name = path.basename(url.searchParams.get('name') || '');
   const fromThisComputer = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
-  if (req.method !== 'POST' || !fromThisComputer || !/^[\w-]+\.(mp4|mov|webm)$/.test(name)) {
+  if (req.method !== 'POST' || !fromThisComputer || !/^[\w-]+\.(mp4|mov|webm|json)$/.test(name)) {
     res.writeHead(400, { 'Content-Type': 'application/json' });
     return res.end('{"error":"bad request"}');
   }

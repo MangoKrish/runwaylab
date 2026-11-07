@@ -47,3 +47,19 @@ export async function keepOnDevice(session) {
   copied.add(session.id);
   if (!(await copyToThisComputer(session))) downloadFile(session);
 }
+
+/**
+ * Under npm run dev, writes the walker's socials next to the video in recordings/ (same name, .json), so the reel
+ * maker can tag them. Elsewhere the socials stay with the saved walk, and Saved walks can export them as a list.
+ */
+export async function saveSocialsFile(session) {
+  if (!LOCAL_HOSTS.includes(location.hostname) || session.source !== 'camera') return;
+  const name = recordingName(session).replace(/\.\w+$/, '.json');
+  const m = session.analysis?.measured;
+  const body = JSON.stringify({ socials: session.socials || '', name: session.name, measured: m?.ok ? `${m.points}/${m.max}` : null, video: recordingName(session) }, null, 2);
+  try {
+    await fetch(`/dev/recordings?name=${encodeURIComponent(name)}`, { method: 'POST', body });
+  } catch {
+    // Not running under npm run dev.
+  }
+}

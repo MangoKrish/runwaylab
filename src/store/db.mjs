@@ -49,6 +49,7 @@ export function summarize(session, total) {
     judged: !!session.judge?.ok,
     matchName: session.judge?.ok ? session.judge.match?.name ?? null : null,
     metricsVersion: session.analysis?.metrics?.version ?? null,
+    socials: session.socials || '',
   };
 }
 

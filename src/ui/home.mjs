@@ -16,7 +16,8 @@ export function walkRow(walk) {
   return h('a', { class: 'rw-row', href: `#/review/${walk.id}` },
     h('span', { class: 'rw-row__main' },
       h('strong', null, walk.name),
-      h('span', { class: 'rw-row__meta' }, `${fmtDate(walk.createdAt)} · ${status}`)),
+      h('span', { class: 'rw-row__meta' }, `${fmtDate(walk.createdAt)} · ${status}`),
+      walk.socials ? h('span', { class: 'rw-row__socials' }, walk.socials) : null),
     score);
 }
 
