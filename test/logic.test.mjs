@@ -1147,3 +1147,33 @@ test('showreel: captions differ from recent edits, and given ones win', () => {
   assert.equal(custom.captions.turn, 'SPIN');
   assert.equal(custom.socials, '@sam.walks');
 });
+
+test('the camera falls back on any refused format, and phones skip the fps minimum', async () => {
+  const { openCamera } = await import('../src/capture/camera.mjs');
+  const real = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  const fake = (ua, refuse) => {
+    const asked = [];
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { userAgent: ua, maxTouchPoints: 0, mediaDevices: { getUserMedia: async (c) => {
+      asked.push(c.video);
+      if (refuse(c.video)) throw Object.assign(new Error('refused'), { name: 'OverconstrainedError', constraint: '' });
+      return { ok: true };
+    } } } });
+    return asked;
+  };
+  try {
+    // Safari on a Mac: refuses the minimum without naming it.
+    let asked = fake('Mozilla/5.0 (Macintosh) Safari', (v) => v.frameRate?.min);
+    assert.deepEqual(await openCamera(), { ok: true });
+    assert.equal(asked.length, 2);
+    // An iPhone never gets the minimum, and a camera refusing every preference still opens with none.
+    asked = fake('Mozilla/5.0 (iPhone) Safari', (v) => Object.keys(v).length > 0);
+    assert.deepEqual(await openCamera(), { ok: true });
+    assert.ok(asked.every((v) => !v.frameRate?.min));
+    assert.deepEqual(asked.at(-1), {});
+    // A refused permission is a real answer: no retries.
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { userAgent: 'x', mediaDevices: { getUserMedia: async () => { throw Object.assign(new Error('no'), { name: 'NotAllowedError' }); } } } });
+    await assert.rejects(openCamera(), (e) => e.kind === 'denied');
+  } finally {
+    if (real) Object.defineProperty(globalThis, 'navigator', real);
+  }
+});

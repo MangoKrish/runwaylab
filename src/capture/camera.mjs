@@ -21,7 +21,7 @@ function explain(err) {
     case 'AbortError':
       return new CameraError('busy', 'The camera is in use by another app, or would not start. Close other video apps and try again.');
     default:
-      return new CameraError('other', `The camera could not start${err?.message ? `: ${err.message}` : '.'}`);
+      return new CameraError('other', `The camera could not start (${err?.name || 'unknown error'}${err?.message ? `: ${err.message}` : ''}).`);
   }
 }
 
@@ -39,18 +39,37 @@ export async function openCamera(deviceId) {
     throw new CameraError('unsupported', 'This browser cannot use a camera on this page. Cameras need https or localhost, and a recent browser.');
   }
   const ask = (format) => navigator.mediaDevices.getUserMedia({ audio: false, video: { ...(deviceId ? { deviceId: { exact: deviceId } } : {}), ...format } });
-  try {
-    return await ask(SMOOTH_VIDEO);
-  } catch (err) {
-    // Only a camera without a fast mode gets the fallback. Other errors (permission, busy) are real answers.
-    if (err?.name !== 'OverconstrainedError' || err?.constraint !== 'frameRate') throw explain(err);
+  // Fastest first, then the best picture, then whatever the camera gives. Phones and Safari often refuse the
+  // 50 fps minimum, and do not always say which constraint failed, so any refused format moves on to the next.
+  const formats = isPhone() ? [BEST_VIDEO, {}] : [SMOOTH_VIDEO, BEST_VIDEO, {}];
+  let last = null;
+  for (const [i, format] of formats.entries()) {
+    try {
+      // A camera can sit silent on a mode it cannot do instead of refusing it. Every format but the last gets
+      // 10 seconds (Continuity Camera needs a few to wake the iPhone), and a stream that turns up late is stopped.
+      return i === formats.length - 1 ? await ask(format) : await withTimeout(ask(format), 10_000);
+    } catch (err) {
+      last = err;
+      // A refused permission or a missing camera is a real answer. A camera that would not start in one mode (the
+      // iPhone through Continuity Camera can do this) gets the next, gentler format.
+      if (!['OverconstrainedError', 'ConstraintNotSatisfiedError', 'TypeError', 'NotReadableError', 'AbortError'].includes(err?.name)) break;
+    }
   }
-  try {
-    return await ask(BEST_VIDEO);
-  } catch (err) {
-    throw explain(err);
-  }
+  throw explain(last);
 }
+
+function withTimeout(asking, ms) {
+  let timer;
+  const late = new Promise((_, reject) => { timer = setTimeout(() => reject(Object.assign(new Error('The camera did not answer.'), { name: 'AbortError' })), ms); });
+  return Promise.race([asking, late]).then((stream) => { clearTimeout(timer); return stream; }, (err) => {
+    clearTimeout(timer);
+    if (err?.name === 'AbortError' && err.message === 'The camera did not answer.') asking.then(stopStream, () => {});
+    throw err;
+  });
+}
+
+/** A phone or tablet: their browsers handle frame-rate minimums badly, so they skip straight to preferences. */
+export const isPhone = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
 
 /** Device names are only available after permission is granted, so call this after openCamera. */
 export async function listCameras() {
