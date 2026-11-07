@@ -297,6 +297,16 @@
   color: var(--stage-accent); --accent: var(--stage-accent);
 }
 .rw-wallcard__stage .rw-thumb { width: auto; max-width: 100%; height: 100%; }
+.rw-wallcard__stage:has(.rw-wallcard__poster) { padding: 0; overflow: hidden; }
+.rw-wallcard__poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+.rw-wallcard__stage:has(.rw-wallcard__poster) .rw-wallcard__rank { z-index: 1; color: var(--stage-ink); text-shadow: 0 1px 8px rgb(0 0 0 / 0.6); }
+.rw-wallcard__badge {
+  position: absolute; z-index: 1; right: var(--s-3); bottom: var(--s-3); display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 4px 10px 4px 6px; border-radius: 999px; background: rgb(15 26 49 / 0.78); color: var(--stage-ink); font-size: var(--t-small); font-weight: 600;
+}
+.rw-wallcard__badge .rw-icon { width: 16px; height: 16px; color: var(--stage-accent); }
+.rw-walledit { margin: 0; display: grid; gap: var(--s-2); justify-items: center; }
+.rw-walledit__video { display: block; width: 100%; max-width: 360px; aspect-ratio: 9 / 16; max-height: 72vh; border-radius: var(--r-m); background: var(--stage); object-fit: contain; }
 .rw-wallcard__figure { height: 100%; width: auto; color: var(--stage-ink); }
 .rw-wallcard__rank { position: absolute; top: var(--s-3); left: var(--s-4); font-size: var(--t-num-xl); font-weight: 700; line-height: 1.1; letter-spacing: var(--track-num); color: color-mix(in srgb, var(--stage-ink) 60%, transparent); font-variant-numeric: tabular-nums; }
 .rw-wallcard--podium .rw-wallcard__stage { height: 280px; }

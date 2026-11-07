@@ -83,13 +83,28 @@ const fromRow = (row) => ({
 
 const COLUMNS = 'id, posted_at, name, owner_hash, width, height, duration, total, measured, claps, detail';
 
+// Tiger Data signs its servers with its own certificate authority, which Node does not trust by default.
+// Trust exactly that one, kept beside this file, so the connection is still fully verified.
+const TIGER_CA = new URL('./_tiger-ca.pem', import.meta.url);
+
+/** Connection settings for pg. The URL's sslmode would replace the ssl option, so it is taken out here. */
+export async function pgConfig(url) {
+  const u = new URL(url);
+  const mode = u.searchParams.get('sslmode');
+  if (!mode || mode === 'disable') return { connectionString: url };
+  u.searchParams.delete('sslmode');
+  const tiger = /\.timescale\.com$|\.tigerdata\.com$/.test(u.hostname);
+  const ca = tiger ? await fs.readFile(TIGER_CA, 'utf8') : undefined;
+  return { connectionString: u.href, ssl: ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: true } };
+}
+
 // One pool per running function instance. Small, because serverless runs many instances.
 let pool = null;
 let poolUrl = null;
 async function getPool(url) {
   if (pool && poolUrl === url) return pool;
   const { default: pg } = await import('pg');
-  pool = new pg.Pool({ connectionString: url, max: 2, idleTimeoutMillis: 10_000, connectionTimeoutMillis: 8_000 });
+  pool = new pg.Pool({ ...(await pgConfig(url)), max: 2, idleTimeoutMillis: 10_000, connectionTimeoutMillis: 8_000 });
   pool.on('error', (err) => console.error('wall database:', err.code || err.message));
   poolUrl = url;
   return pool;

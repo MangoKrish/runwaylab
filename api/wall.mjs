@@ -52,7 +52,7 @@ export function cleanFrames(input, W, H) {
 }
 
 /** The numbers shown on the wall, all taken from the server's own recomputation. */
-function buildDetail(summary, judge, frames, duration) {
+export function buildDetail(summary, judge, frames, duration) {
   const { metrics, measured, phases } = summary;
   const shown = {};
   for (const key of METRIC_KEYS) {

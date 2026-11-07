@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
-import { SCHEMA } from '../api/_wallstore.mjs';
+import { SCHEMA, pgConfig } from '../api/_wallstore.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const envFile = path.join(HERE, '..', '.env.local');
@@ -24,7 +24,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 const [command, argument] = process.argv.slice(2);
-const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+const db = new pg.Client(await pgConfig(process.env.DATABASE_URL));
 await db.connect();
 
 async function hasTimescale() {

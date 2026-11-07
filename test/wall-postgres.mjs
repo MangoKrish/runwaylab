@@ -87,7 +87,7 @@ try {
 
   // On TimescaleDB, prove that replay and delete still work once frames have been compressed.
   const { default: pgc } = await import('pg');
-  const direct = new pgc.Client({ connectionString: process.env.DATABASE_URL });
+  const direct = new pgc.Client(await store.pgConfig(process.env.DATABASE_URL));
   await direct.connect();
   const timescale = await direct.query("SELECT 1 FROM pg_extension WHERE extname = 'timescaledb'");
   if (timescale.rowCount) {
@@ -126,7 +126,7 @@ const rows = (await (await wall.GET(req('GET', '?sort=new'))).json()).walks.filt
 check('cleanup removed every test post', rows.length === 0);
 
 const { default: pg } = await import('pg');
-const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
+const db = new pg.Client(await store.pgConfig(process.env.DATABASE_URL));
 await db.connect();
 const left = await db.query('SELECT count(*)::int AS n FROM walk_frames WHERE walk_id = ANY($1::uuid[])', [created.map((c) => c.id)]);
 check('deleting a walk deletes its frames', left.rows[0].n === 0);

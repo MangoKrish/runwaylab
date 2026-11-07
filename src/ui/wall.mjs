@@ -55,13 +55,17 @@ export function wallScreen(root) {
   const notice = h('div');
 
   function card(walk, index) {
-    const thumb = poseThumb(walk.detail?.pose);
+    const edit = walk.detail?.video;
+    const thumb = edit
+      ? h('img', { class: 'rw-wallcard__poster', src: edit.poster, alt: '', loading: 'lazy', decoding: 'async' })
+      : poseThumb(walk.detail?.pose);
     const judge = walk.detail?.judge;
     const podium = sort === 'top' && index < 3;
     return h('article', { class: `rw-wallcard rw-card--link${podium ? ' rw-wallcard--podium' : ''}`, style: `--i:${Math.min(index, 8)}` },
       h('a', { class: 'rw-wallcard__link', href: `#/wall/${walk.id}`, 'aria-label': `${walk.name}, ${scoreText(walk).join('')}. Watch the replay.` },
         h('div', { class: 'rw-wallcard__stage rw-on-stage' },
           sort === 'top' ? h('span', { class: 'rw-wallcard__rank' }, String(index + 1)) : null,
+          edit ? h('span', { class: 'rw-wallcard__badge' }, icon('play'), 'Edit') : null,
           thumb || art('figure.svg', 'rw-wallcard__figure', `card${index}`)),
         h('div', { class: 'rw-wallcard__body' },
           h('div', { class: 'rw-wallcard__head' }, h('h2', null, walk.name), score(walk)),
@@ -112,7 +116,14 @@ export function wallScreen(root) {
       value === null || value === undefined
         ? h('p', { class: 'rw-stat__value rw-stat__value--none' }, 'None yet')
         : h('p', { class: 'rw-stat__value' }, String(value)));
-    statsRow.append(tile('Walks posted', stats.walks), tile('In the last hour', stats.lastHour), tile('Average score', stats.average), tile('Top score', stats.top));
+    // Before any walk is judged by Gemini, the full scores are empty, so show the measured half out of 70.
+    const measured = walks.map((w) => w.measured).filter(Number.isFinite);
+    const judgedNone = stats.top === null || stats.top === undefined;
+    const average = judgedNone && measured.length ? `${Math.round(measured.reduce((a, b) => a + b, 0) / measured.length)}/70` : stats.average;
+    const top = judgedNone && measured.length ? `${Math.max(...measured)}/70` : stats.top;
+    statsRow.append(tile('Walks posted', stats.walks), tile('In the last hour', stats.lastHour),
+      tile(judgedNone && measured.length ? 'Average measured' : 'Average score', average),
+      tile(judgedNone && measured.length ? 'Top measured' : 'Top score', top));
   }
 
   const sortSelect = h('select', { id: 'rw-wall-sort', onChange: (e) => { sort = e.target.value; load(); } },
@@ -120,7 +131,7 @@ export function wallScreen(root) {
     h('option', { value: 'new' }, 'Newest first'));
 
   root.append(
-    pageHead('The wall', 'Everyone who chose to post. Skeletons and scores, never video.'),
+    pageHead('The wall', 'Everyone who chose to post. Skeletons and scores, plus an edit for walkers who said yes to showing one.'),
     notice,
     statsRow,
     h('div', { class: 'rw-toolbar' }, h('div', { class: 'rw-field rw-field--inline' }, h('label', { class: 'rw-field__label', for: 'rw-wall-sort' }, 'Sort by'), sortSelect)),
@@ -143,8 +154,9 @@ export function wallScreen(root) {
       return;
     }
     notice.replaceChildren(...[localNotice(info)].filter(Boolean));
+    // The list first: the measured fallback in the stats is worked out from it.
+    await load();
     wallStats().then((stats) => { if (alive && stats.ok) renderStats(stats); });
-    load();
   })();
 
   return { cleanup() { alive = false; } };
@@ -238,7 +250,11 @@ export function wallWalkScreen(root, app, id) {
         h('div', { class: 'rw-actions rw-actions--top rw-wallpost__actions' }, clapButton(walk), copy, remove)),
       status,
       h('div', { class: 'rw-result' },
-        h('div', { class: 'rw-result__media' }, player.el),
+        h('div', { class: 'rw-result__media' },
+          d.video ? h('figure', { class: 'rw-walledit' },
+            h('video', { class: 'rw-walledit__video', src: d.video.src, poster: d.video.poster, controls: '', playsinline: '', preload: 'metadata', 'aria-label': `${walk.name}'s edit` }),
+            h('figcaption', { class: 'rw-caption' }, 'The edit, shown with the walker\'s permission. The skeleton replay is below.')) : null,
+          player.el),
         h('div', { class: 'rw-result__summary' },
           h('div', { class: 'rw-scoreblock' },
             h('p', { class: 'rw-eyebrow' }, judge ? 'Score' : 'Measured score'),
