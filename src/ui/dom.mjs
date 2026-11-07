@@ -40,3 +40,40 @@ export function liveRegion(className = '') {
 export function button(label, onClick, { kind = 'ghost', ...rest } = {}) {
   return h('button', { type: 'button', class: `rw-btn rw-btn--${kind}`, onClick, ...rest }, label);
 }
+
+// Shared pieces for the screens, so every page builds its section heads, numbers and notices the same way.
+export { icon, artSvg } from '../art/inline.mjs';
+
+/**
+ * A section head: eyebrow, title and an optional lede, with the runway rule on top.
+ * @param options.action An element (a link or button) placed at the right on wide screens.
+ */
+export function sectionHead({ eyebrow, title, lede, level = 'h2', id, action } = {}) {
+  return h('div', { class: action ? 'rw-sechead rw-sechead--row' : 'rw-sechead' },
+    h('div', { class: 'rw-sechead__text' },
+      eyebrow ? h('p', { class: 'rw-eyebrow' }, eyebrow) : null,
+      h(level, { class: 'rw-title', id }, title),
+      lede ? h('p', { class: 'rw-lede' }, lede) : null),
+    action ? h('div', { class: 'rw-sechead__action' }, action) : null);
+}
+
+/** A number in the house style, with its unit or maximum in a quieter span: num(82, '/100'). */
+export function num(value, unit, { xl = false } = {}) {
+  return h('span', { class: xl ? 'rw-num rw-num--xl' : 'rw-num' }, String(value), unit ? h('span', { class: 'rw-unit' }, unit) : null);
+}
+
+let toastEl = null;
+let toastTimer = 0;
+/** A short confirmation at the bottom of the screen, announced politely. One at a time; a new one replaces it. */
+export function toast(text) {
+  if (!toastEl || !toastEl.isConnected) {
+    toastEl = h('p', { class: 'rw-toast', role: 'status', 'aria-live': 'polite' });
+    document.body.append(toastEl);
+  }
+  clearTimeout(toastTimer);
+  toastEl.textContent = text;
+  toastEl.classList.remove('is-shown');
+  void toastEl.offsetWidth;
+  toastEl.classList.add('is-shown');
+  toastTimer = setTimeout(() => toastEl?.classList.remove('is-shown'), 2600);
+}

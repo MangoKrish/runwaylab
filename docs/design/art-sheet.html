@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RunwayLab art sheet</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../../src/fonts.css">
+<link rel="stylesheet" href="../../src/styles.css">
+<style>
+  /* A contact sheet of src/art, inlined so the page theme recolours it. Open at /docs/design/art-sheet.html on the dev server. */
+  .sheet { display: grid; gap: 40px; padding: 32px 0 80px; }
+  .sheet h2 { font-size: 1.1rem; color: var(--ink-2); font-weight: 500; }
+  .sheet figure { margin: 0; display: grid; gap: 10px; }
+  .sheet figcaption { font-size: .9rem; color: var(--ink-2); }
+  .frame { border: 1px solid var(--hair); border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: var(--surface); }
+  .frame--stage { background: var(--stage); color: var(--stage-ink); --accent: var(--stage-accent); }
+  .frame svg, .frame img { display: block; width: 100%; height: auto; }
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .icons { display: flex; flex-wrap: wrap; gap: 18px; padding: 20px; }
+  .icons .ic { display: grid; gap: 6px; justify-items: center; font-size: .8rem; color: var(--ink-2); }
+  .icons svg { width: 32px; height: 32px; }
+  .icons.big svg { width: 64px; height: 64px; }
+  .phone { width: 390px; max-width: 100%; aspect-ratio: 390 / 520; }
+  .phone svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div class="rw-app">
+<main class="sheet">
+  <h1>RunwayLab art</h1>
+  <p class="rw-muted">Every file in <code>src/art</code>, inlined so <code>currentColor</code> and <code>--accent</code> come from the page. Switch the OS theme to see both.</p>
+
+  <section>
+    <h2>hero.svg, on the page background and on the stage</h2>
+    <div class="row">
+      <figure><div class="frame" data-art="hero.svg"></div><figcaption>inline, page colours</figcaption></figure>
+      <figure><div class="frame frame--stage" data-art="hero.svg"></div><figcaption>inline, stage colours</figcaption></figure>
+      <figure><div class="frame"><img src="../../src/art/hero.svg" alt="hero.svg as an img"></div><figcaption>as &lt;img&gt;, its own fallback colours</figcaption></figure>
+      <figure><div class="frame phone" data-art="hero.svg" data-slice></div><figcaption>phone crop, preserveAspectRatio slice</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>icons.svg sprite and the single files</h2>
+    <div class="frame"><div class="icons" id="icons"></div></div>
+    <div class="frame frame--stage"><div class="icons big" id="icons-stage"></div></div>
+  </section>
+
+  <section>
+    <h2>empty-walks.svg</h2>
+    <div class="row">
+      <figure><div class="frame" data-art="empty-walks.svg"></div><figcaption>inline</figcaption></figure>
+      <figure><div class="frame frame--stage" data-art="empty-walks.svg"></div><figcaption>on the stage</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>divider.svg, mark.svg and figure.svg</h2>
+    <div class="row">
+      <figure><div class="frame" data-art="divider.svg"></div><figcaption>divider</figcaption></figure>
+      <figure><div class="frame" style="padding: 24px"><div style="width: 96px" data-art="mark.svg"></div></div><figcaption>mark</figcaption></figure>
+      <figure><div class="frame" style="padding: 24px"><div style="width: 48px" data-art="figure.svg"></div></div><figcaption>figure, 48 px wide</figcaption></figure>
+      <figure><div class="frame frame--stage" style="padding: 24px"><div style="width: 96px" data-art="figure.svg"></div></div><figcaption>figure on the stage</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>og.svg, 1200 x 630</h2>
+    <figure><div class="frame" data-art="og.svg"></div><figcaption>fixed colours on purpose: it is shared as a picture</figcaption></figure>
+  </section>
+</main>
+</div>
+<script type="module">
+  // The same helper the app can use: src/art/inline.mjs.
+  import { artSvg, icon } from '../../src/art/inline.mjs';
+  const ICONS = ['camera', 'walk', 'turn', 'score', 'judge', 'wall', 'download', 'socials'];
+  const only = new URLSearchParams(location.search).get('only');
+  if (only) for (const el of document.querySelectorAll('main > section')) if (!el.textContent.includes(only)) el.remove();
+  let n = 0;
+  for (const box of document.querySelectorAll('[data-art]')) {
+    try {
+      const svg = await artSvg(box.dataset.art, { copy: n++ });
+      if ('slice' in box.dataset) svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+      box.append(svg);
+    } catch (err) {
+      box.append(Object.assign(document.createElement('p'), { textContent: `${box.dataset.art}: ${err.message}`, className: 'rw-error' }));
+    }
+  }
+  for (const id of ['icons', 'icons-stage']) {
+    const host = document.getElementById(id);
+    for (const name of ICONS) {
+      const cell = document.createElement('div');
+      cell.className = 'ic';
+      cell.append(icon(name), Object.assign(document.createElement('span'), { textContent: name }));
+      host.append(cell);
+    }
+    for (const name of ICONS) {
+      const cell = document.createElement('div');
+      cell.className = 'ic';
+      try { cell.append(await artSvg(`icon-${name}.svg`, { decorative: true, copy: n++ })); } catch { cell.textContent = `icon-${name}.svg missing`; }
+      cell.append(Object.assign(document.createElement('span'), { textContent: `${name} file` }));
+      host.append(cell);
+    }
+  }
+</script>
+</body>
+</html>

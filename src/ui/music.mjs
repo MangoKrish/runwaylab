@@ -1,7 +1,7 @@
 // Music to walk to. It plays from this laptop while recording, and is not part of the recording, because the
 // microphone stays off. The tracks are Creative Commons, from Wikimedia Commons: see NOTICE.md. Anyone can also
 // choose a file of their own, which stays on this device.
-import { h, clear } from './dom.mjs';
+import { h, clear, icon } from './dom.mjs';
 
 const SAVED_TRACK = 'rw-music';
 const remember = (value) => { try { localStorage.setItem(SAVED_TRACK, value); } catch { /* Private browsing. */ } };
@@ -23,13 +23,23 @@ export function createMusic(base) {
   if (choice !== 'off' && !TRACKS.some((t) => t.id === choice)) choice = TRACKS[0].id;
   let fading = null;
 
-  const credit = h('p', { class: 'rw-muted rw-small', 'data-music-credit': '' });
-  const status = h('p', { class: 'rw-muted rw-small', role: 'status' });
+  const credit = h('p', { class: 'rw-caption rw-music__credit', 'data-music-credit': '' });
+  const status = h('p', { class: 'rw-status rw-status--warn', role: 'status' });
   const fileInput = h('input', { type: 'file', accept: 'audio/*', class: 'rw-upload__input', id: 'rw-music-file', onChange: onFile });
   const select = h('select', { id: 'rw-music', 'aria-label': 'Music', onChange: (e) => choose(e.target.value) });
-  const volume = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: 0.7, 'aria-label': 'Music volume', onInput: (e) => { audio.volume = Number(e.target.value); } });
+  const volume = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: 0.7, class: 'rw-range', 'aria-label': 'Music volume', onInput: (e) => { audio.volume = Number(e.target.value); paintVolume(); } });
+  // The filled part of the slider, drawn from the value, so the track reads like the data bars elsewhere.
+  const paintVolume = () => volume.style.setProperty('--fill', `${Math.round(Number(volume.value) * 100)}%`);
+  paintVolume();
   audio.volume = 0.7;
-  const previewButton = h('button', { type: 'button', class: 'rw-btn rw-btn--small', onClick: togglePreview }, 'Preview');
+  const previewLabel = h('span', null, 'Preview');
+  const previewIcon = h('span', { class: 'rw-music__icon', 'aria-hidden': 'true' }, icon('play'));
+  const previewButton = h('button', { type: 'button', class: 'rw-btn rw-btn--small rw-music__preview', onClick: togglePreview }, previewIcon, previewLabel);
+  const setPreview = (playing) => {
+    previewLabel.textContent = playing ? 'Stop preview' : 'Preview';
+    previewButton.classList.toggle('is-playing', playing);
+    previewIcon.replaceChildren(icon(playing ? 'pause' : 'play'));
+  };
 
   function fillOptions() {
     clear(select).append(
@@ -54,7 +64,7 @@ export function createMusic(base) {
     else if (id === 'own') audio.src = ownUrl;
     else audio.removeAttribute('src');
     previewButton.disabled = id === 'off';
-    previewButton.textContent = 'Preview';
+    setPreview(false);
   }
 
   function onFile(event) {
@@ -80,7 +90,7 @@ export function createMusic(base) {
   function stop() {
     clearInterval(fading);
     audio.pause();
-    previewButton.textContent = 'Preview';
+    setPreview(false);
   }
 
   /** Fade out rather than cutting off at the end of the walk. */
@@ -100,7 +110,7 @@ export function createMusic(base) {
   function togglePreview() {
     if (audio.paused) {
       play();
-      previewButton.textContent = 'Stop preview';
+      setPreview(true);
     } else {
       stop();
     }
@@ -109,17 +119,17 @@ export function createMusic(base) {
   fillOptions();
   choose(choice);
 
-  const el = h('section', { class: 'rw-panel' },
-    h('h2', null, 'Music to walk to'),
+  const el = h('section', { class: 'rw-card rw-card--quiet rw-panel rw-music', 'aria-labelledby': 'rw-music-title' },
+    h('div', { class: 'rw-card__head' }, h('h2', { id: 'rw-music-title' }, 'Music to walk to')),
     h('label', { class: 'rw-field' }, h('span', null, 'Track'), select),
     h('label', { class: 'rw-field' }, h('span', null, 'Volume'), volume),
     h('div', { class: 'rw-actions rw-actions--top' },
       previewButton,
+      fileInput,
       h('label', { class: 'rw-btn rw-btn--small', for: 'rw-music-file' }, 'Use my own track')),
-    fileInput,
     credit,
     status,
-    h('p', { class: 'rw-muted rw-small' }, 'It starts when recording starts. It plays out loud and is never recorded.'));
+    h('p', { class: 'rw-field__help' }, 'It starts when recording starts. It plays out loud and is never recorded.'));
 
   return {
     el,

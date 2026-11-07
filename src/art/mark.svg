@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="rl-mark-t">
+<title id="rl-mark-t">RunwayLab</title>
+<style>svg:root{color:#1F1D1B;--accent:#5B3FC4}@media(prefers-color-scheme:dark){svg:root{color:#F5F0E8;--accent:#B3A1FF}}</style>
+<rect width="64" height="64" rx="14" fill="currentColor"/>
+<g style="color:var(--accent)"><path d="M24 11h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".7"/><path d="M28 16h8l11 40H17z" fill="currentColor"/></g>
+<path d="M32 22v28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="0 6"/>
+</svg>

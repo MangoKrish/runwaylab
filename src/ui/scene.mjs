@@ -35,8 +35,8 @@ function seeded(seed) {
 function viewFor(W, H, dpr) {
   const narrow = W / H < 1;
   return narrow
-    ? { W, H, dpr, narrow, vx: W * 0.5, hy: H * 0.27, f: H * 0.68 }
-    : { W, H, dpr, narrow, vx: W * 0.68, hy: H * 0.44, f: H * 1.42 };
+    ? { W, H, dpr, narrow, vx: W * 0.5, hy: H * 0.44, f: H * 1.3 }
+    : { W, H, dpr, narrow, vx: W * 0.64, hy: H * 0.44, f: H * 1.42 };
 }
 
 const project = (view, x, y, d) => [view.vx + (view.f * x) / d, view.hy - (view.f * (y - CAMERA_HEIGHT)) / d];
@@ -330,28 +330,25 @@ function paintFigure(ctx, view, pose, depthOf, mirror = false) {
   ctx.restore();
 }
 
+/** Where each kind of callout attaches to the body: the joint on the right-hand side of the picture. */
+function anchorsFor(view, pose, depthOf) {
+  const point = (p) => project(view, p.x, p.y, depthOf(p));
+  const right = (a, b) => {
+    const [pa, pb] = [point(pose[a]), point(pose[b])];
+    return pa[0] > pb[0] ? pa : pb;
+  };
+  return {
+    shoulders: () => right(LM.L_SHOULDER, LM.R_SHOULDER),
+    head: () => right(LM.L_EAR, LM.R_EAR),
+    hips: () => right(LM.L_HIP, LM.R_HIP),
+    feet: () => right(LM.L_ANKLE, LM.R_ANKLE),
+  };
+}
+
 /** Labels beside the figure, each with a line to the part of the body it describes. */
 function paintCallouts(ctx, view, pose, depthOf, callouts, strength) {
   if (!callouts.length || strength <= 0) return;
-  const point = (p) => project(view, p.x, p.y, depthOf(p));
-  const anchors = {
-    shoulders: () => {
-      const [a, b] = [point(pose[LM.L_SHOULDER]), point(pose[LM.R_SHOULDER])];
-      return a[0] > b[0] ? a : b;
-    },
-    head: () => {
-      const [a, b] = [point(pose[LM.L_EAR]), point(pose[LM.R_EAR])];
-      return a[0] > b[0] ? a : b;
-    },
-    hips: () => {
-      const [a, b] = [point(pose[LM.L_HIP]), point(pose[LM.R_HIP])];
-      return a[0] > b[0] ? a : b;
-    },
-    feet: () => {
-      const [a, b] = [point(pose[LM.L_ANKLE]), point(pose[LM.R_ANKLE])];
-      return a[0] > b[0] ? a : b;
-    },
-  };
+  const anchors = anchorsFor(view, pose, depthOf);
   const size = Math.max(14, Math.min(17, (view.W / view.dpr) * 0.0115)) * view.dpr;
   const labelX = Math.min(view.W - size * 13, view.vx + view.W * 0.095);
   ctx.save();
@@ -381,11 +378,54 @@ function paintCallouts(ctx, view, pose, depthOf, callouts, strength) {
 }
 
 /**
+ * Thin leader lines from each joint to its readout in the page beside the picture. The words live in the page, so
+ * they stay sharp and readable; the canvas only draws the line and the dot on the joint.
+ * @param readout { x, ys } in CSS pixels relative to the canvas: the column's left edge and each item's middle.
+ */
+function paintLeaders(ctx, view, pose, depthOf, callouts, readout, strength) {
+  if (!callouts.length || !readout || strength <= 0) return;
+  const anchors = anchorsFor(view, pose, depthOf);
+  const { dpr } = view;
+  const endX = (readout.x - 14) * dpr;
+  ctx.save();
+  ctx.globalAlpha = strength;
+  ctx.lineWidth = dpr;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(243, 240, 250, 0.35)';
+  ctx.fillStyle = '#FFFFFF';
+  for (const callout of callouts) {
+    const ty = readout.ys?.[callout.at];
+    if (ty === undefined) continue;
+    const [x, y] = anchors[callout.at]();
+    const gap = endX - x;
+    if (gap < 24 * dpr) continue;
+    // Out from the joint, one angled run, then level into the readout: a calm, drawn-by-hand line.
+    const bend = x + Math.min(gap * 0.4, 56 * dpr);
+    const settle = Math.max(bend + 4 * dpr, endX - 20 * dpr);
+    ctx.beginPath();
+    ctx.moveTo(x + 4 * dpr, y);
+    ctx.lineTo(bend, y);
+    ctx.lineTo(settle, ty * dpr);
+    ctx.lineTo(endX, ty * dpr);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, 2.25 * dpr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(endX, ty * dpr, 1.5 * dpr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/**
  * @param canvas The canvas to draw on. It fills whatever its CSS gives it.
  * @param options.callouts Labels to show, each { at: 'head'|'shoulders'|'hips'|'feet', value, label }.
- * @returns start, stop and setCallouts.
+ * @param options.labels false to paint no words on the canvas, only leader lines to readouts placed by the page
+ *   (see setReadoutX). The joint dots stay either way.
+ * @returns start, stop, setCallouts and setReadoutX.
  */
-export function createRunwayScene(canvas, { callouts = [] } = {}) {
+export function createRunwayScene(canvas, { callouts = [], labels: paintLabels = true } = {}) {
   const ctx = canvas.getContext('2d');
   const timeline = walkTimeline('catwalk', { near: NEAR, far: FAR });
   const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -393,6 +433,7 @@ export function createRunwayScene(canvas, { callouts = [] } = {}) {
   const firstMoment = timeline.approachSeconds * 0.62;
   const loop = timeline.duration + LOOP_GAP_SECONDS;
   let labels = callouts;
+  let readout = null;
   let stage = null;
   let view = null;
   let reflection = null;
@@ -473,7 +514,9 @@ export function createRunwayScene(canvas, { callouts = [] } = {}) {
 
       paintFigure(ctx, view, pose, depthOf);
       ctx.globalAlpha = 1;
-      if (!view.narrow) paintCallouts(ctx, view, pose, depthOf, labels, Math.min(1, (9 - hips) / 1.6));
+      const strength = Math.min(1, (9 - hips) / 1.6);
+      if (paintLabels && !view.narrow) paintCallouts(ctx, view, pose, depthOf, labels, strength);
+      if (!paintLabels) paintLeaders(ctx, view, pose, depthOf, labels, readout, strength);
     }
   }
 
@@ -521,6 +564,16 @@ export function createRunwayScene(canvas, { callouts = [] } = {}) {
     },
     setCallouts(next) {
       labels = next;
+      if (still) draw(timeline.approachSeconds * 0.86);
+    },
+    /**
+     * Where the page's readout column starts, so leaders can run to it. Pass null to draw no leaders.
+     * @param x The column's left edge in CSS pixels from the canvas's left edge.
+     * @param ys Each readout's vertical middle in CSS pixels from the canvas's top, keyed by 'head', 'shoulders',
+     *   'hips' and 'feet'.
+     */
+    setReadoutX(x, ys = {}) {
+      readout = Number.isFinite(x) ? { x, ys } : null;
       if (still) draw(timeline.approachSeconds * 0.86);
     },
   };

@@ -1,15 +1,20 @@
 // Playback, with the skeleton drawn into the same picture. Everything is painted on one canvas, so the
 // skeleton can never slip out of line with the video, and a sideways recording can be shown upright.
 // With no video, it plays the skeleton alone on a dark stage: the wall's replays and the labeled sample.
-import { h, fmtTime, reducedMotion } from './dom.mjs';
+import { h, fmtTime, reducedMotion, icon } from './dom.mjs';
 import { drawSkeleton } from './overlay.mjs';
 import { poseAt } from '../lib/process.mjs';
 
-const STAGE = '#141210';
-const FLOOR = '#26221F';
+// The stage colours from the design tokens. The canvas cannot read CSS variables cheaply every frame.
+const STAGE = '#0B0A10';
+const FLOOR_FAR = '#1A1524';
+const FLOOR_NEAR = '#272036';
 const MAX_CANVAS = 1600;
 
-export function createPlayer({ blob = null, analysis = null, rotation = 0, badge = null, label = 'Walk replay' }) {
+/**
+ * @param options.onTime Called with (seconds, duration) whenever the picture is repainted, for a playhead.
+ */
+export function createPlayer({ blob = null, analysis = null, rotation = 0, badge = null, label = 'Walk replay', onTime = null }) {
   const canvas = h('canvas', { class: 'rw-player__canvas', role: 'img', 'aria-label': label });
   const ctx = canvas.getContext('2d', { alpha: false });
   const video = blob ? h('video', { class: 'rw-player__video', playsinline: true, muted: true, preload: 'auto', 'aria-hidden': 'true', tabindex: '-1' }) : null;
@@ -17,17 +22,19 @@ export function createPlayer({ blob = null, analysis = null, rotation = 0, badge
   if (video) video.src = url;
 
   const message = h('p', { class: 'rw-player__message', hidden: true });
-  const stage = h('div', { class: 'rw-player' }, video, canvas, badge ? h('p', { class: 'rw-player__badge' }, badge) : null, message);
+  const stage = h('div', { class: 'rw-player rw-on-stage' }, video, canvas, badge ? h('p', { class: 'rw-player__badge' }, badge) : null, message);
+  // Room for a progress panel over the picture (the analysis), so the walker watches their walk while it is read.
+  const overlay = h('div', { class: 'rw-player__overlay rw-on-stage' });
 
-  const toggle = h('button', { type: 'button', class: 'rw-btn rw-btn--small', 'aria-label': 'Play' }, 'Play');
+  const toggle = h('button', { type: 'button', class: 'rw-btn rw-btn--small rw-player__toggle', 'aria-label': 'Play' }, icon('play'), h('span', null, 'Play'));
   const range = h('input', { type: 'range', min: 0, max: 1, step: 0.01, value: 0, 'aria-label': 'Position in the walk' });
   const time = h('span', { class: 'rw-player__time' }, '0:00');
-  const speed = h('button', { type: 'button', class: 'rw-btn rw-btn--small', 'aria-label': 'Playback speed' }, '1×');
+  const speed = h('button', { type: 'button', class: 'rw-btn rw-btn--small rw-player__speed', 'aria-label': 'Playback speed' }, '1×');
   const skeletonBox = h('input', { type: 'checkbox', checked: true });
   const controls = h('div', { class: 'rw-player__controls' },
     toggle, range, time, speed,
     h('label', { class: 'rw-check rw-check--plain' }, skeletonBox, h('span', null, 'Skeleton')));
-  const el = h('div', { class: 'rw-playerbox' }, stage, controls);
+  const el = h('div', { class: 'rw-playerbox' }, stage, overlay, controls);
 
   let current = analysis;
   let turn = rotation;
@@ -79,14 +86,38 @@ export function createPlayer({ blob = null, analysis = null, rotation = 0, badge
       ctx.drawImage(video, -w / 2, -h2 / 2, w, h2);
       ctx.restore();
     } else if (!video) {
-      // A vanishing runway, so a change in size reads as walking toward you.
-      ctx.fillStyle = FLOOR;
+      // A vanishing runway, so a change in size reads as walking toward you, with a pool of light at the far end.
+      const horizon = height * 0.42;
+      const pool = ctx.createRadialGradient(width / 2, horizon, 0, width / 2, horizon, width * 0.5);
+      pool.addColorStop(0, 'rgba(120, 100, 200, 0.16)');
+      pool.addColorStop(1, 'rgba(120, 100, 200, 0)');
+      ctx.fillStyle = pool;
+      ctx.fillRect(0, 0, width, height);
+      const floor = ctx.createLinearGradient(0, horizon, 0, height);
+      floor.addColorStop(0, FLOOR_FAR);
+      floor.addColorStop(1, FLOOR_NEAR);
+      ctx.fillStyle = floor;
       ctx.beginPath();
-      ctx.moveTo(width * 0.46, height * 0.42);
-      ctx.lineTo(width * 0.54, height * 0.42);
+      ctx.moveTo(width * 0.46, horizon);
+      ctx.lineTo(width * 0.54, horizon);
       ctx.lineTo(width * 0.92, height);
       ctx.lineTo(width * 0.08, height);
       ctx.fill();
+      // Edge lines and a dashed centre line, faint, the way the runway is drawn everywhere else.
+      ctx.strokeStyle = 'rgba(243, 240, 250, 0.10)';
+      ctx.lineWidth = Math.max(1, width / 800);
+      ctx.beginPath();
+      ctx.moveTo(width * 0.46, horizon);
+      ctx.lineTo(width * 0.08, height);
+      ctx.moveTo(width * 0.54, horizon);
+      ctx.lineTo(width * 0.92, height);
+      ctx.stroke();
+      ctx.setLineDash([height / 40, height / 30]);
+      ctx.beginPath();
+      ctx.moveTo(width / 2, horizon);
+      ctx.lineTo(width / 2, height);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
     if (showSkeleton && current) {
       const pts = poseAt(current.frames, now());
@@ -98,9 +129,11 @@ export function createPlayer({ blob = null, analysis = null, rotation = 0, badge
     time.textContent = `${fmtTime(now())} / ${fmtTime(total)}`;
     const label2 = isPlaying() ? 'Pause' : 'Play';
     if (toggle.textContent !== label2) {
-      toggle.textContent = label2;
+      toggle.replaceChildren(icon(label2 === 'Play' ? 'play' : 'pause'), h('span', null, label2));
       toggle.setAttribute('aria-label', label2);
     }
+    el.dataset.playing = isPlaying() ? 'true' : 'false';
+    onTime?.(now(), total);
     dirty = false;
   }
 
@@ -153,6 +186,7 @@ export function createPlayer({ blob = null, analysis = null, rotation = 0, badge
 
   return {
     el,
+    overlay,
     seek(t) {
       if (video) {
         video.pause();

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RunwayLab share picture</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../../src/fonts.css">
+<style>
+  /* og.svg with the site's own font, for turning into og.png: open on the dev server and screenshot the page at 1200 x 630.
+     Sharing sites want a PNG or JPEG; they do not read SVG. */
+  html, body { margin: 0; background: #0B0A0E; }
+  body { width: 1200px; height: 630px; overflow: hidden; }
+  svg { display: block; width: 1200px; height: 630px; }
+</style>
+</head>
+<body>
+<script type="module">
+  const text = await (await fetch('../../src/art/og.svg')).text();
+  const svg = new DOMParser().parseFromString(text, 'image/svg+xml').documentElement;
+  document.body.append(document.adoptNode(svg));
+  await document.fonts.ready;
+  document.body.dataset.ready = 'true';
+</script>
+</body>
+</html>

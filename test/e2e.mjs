@@ -597,11 +597,11 @@ async function main() {
     await tab.js(`location.hash = '#/review/sample'`);
     await tab.until(tab.hasText('This is a sample'), 'sample', 8000);
     await sleep(400);
-    check('no sideways scrolling', await tab.js(`document.documentElement.scrollWidth <= window.innerWidth + 1`), String(await tab.js('document.documentElement.scrollWidth')));
+    check('no sideways scrolling', await tab.js(`document.documentElement.scrollWidth <= 391`), String(await tab.js('document.documentElement.scrollWidth')));
     await tab.shot('mobile-sample');
     await tab.go('#/');
     await sleep(300);
-    check('home has no sideways scrolling', await tab.js(`document.documentElement.scrollWidth <= window.innerWidth + 1`));
+    check('home has no sideways scrolling', await tab.js(`document.documentElement.scrollWidth <= 391`));
     await tab.shot('mobile-home');
     await tab.send('Emulation.clearDeviceMetricsOverride');
     await tab.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'dark' }] });

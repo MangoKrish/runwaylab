@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" id="rl-empty" viewBox="0 0 320 200" role="img" aria-labelledby="rl-empty-t" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<title id="rl-empty-t">An empty runway with the lights on, waiting for a walk</title>
+<style>svg:root{color:#1F1D1B;--accent:#5B3FC4}@media(prefers-color-scheme:dark){svg:root{color:#F5F0E8;--accent:#B3A1FF}}</style>
+<defs style="color:var(--accent)">
+<radialGradient id="rl-empty-wash" cx="160" cy="80" r="150" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".2"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
+<radialGradient id="rl-empty-pool" cx="160" cy="98" r="26" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".45"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
+<linearGradient id="rl-empty-door" x1="0" y1="30" x2="0" y2="84" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".45"/><stop offset="1" stop-color="currentColor"/></linearGradient>
+<linearGradient id="rl-empty-sheen" x1="0" y1="84" x2="0" y2="200" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".5"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient>
+<linearGradient id="rl-empty-far" x1="0" y1="84" x2="0" y2="200" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".2"/></linearGradient>
+<mask id="rl-empty-depth" maskUnits="userSpaceOnUse" x="0" y="84" width="320" height="116"><rect x="0" y="84" width="320" height="116" fill="url(#rl-empty-far)"/></mask>
+</defs>
+<rect width="320" height="200" fill="url(#rl-empty-wash)"/>
+<g style="color:var(--accent)">
+<path d="M144 84h32l64 116H96z" fill="url(#rl-empty-sheen)"/>
+<g mask="url(#rl-empty-depth)" stroke="currentColor">
+<path stroke-width="1" opacity=".5" d="M44.6 170h230.8M71.3 146.9h177.4M92.1 128.8h135.8M109.8 113.5h100.4M123.9 101.25h72.2M134.9 91.7h50.2"/>
+<path stroke-width="1.25" d="M160 86.7v1.8M160 90.8v2.5M160 95.6v3M160 101.3v3.7M160 108.5v4M160 116.5v5M160 125.6v5.9M160 136.7v6.8M160 148.7v7.8M160 162.6v8.9M160 178.7v9.3M160 195v5"/>
+</g>
+<path d="M10 200L143.5 84.3M310 200L176.5 84.3" stroke="currentColor" stroke-width="4" opacity=".3"/>
+<rect x="144" y="30" width="32" height="54" rx="1" fill="url(#rl-empty-door)"/>
+<ellipse cx="160" cy="98" rx="26" ry="6" fill="url(#rl-empty-pool)"/>
+<g fill="currentColor" opacity=".3"><circle cx="44.6" cy="170" r="7"/><circle cx="275.4" cy="170" r="7"/><circle cx="71.3" cy="146.9" r="6"/><circle cx="248.7" cy="146.9" r="6"/><circle cx="92.1" cy="128.8" r="5"/><circle cx="227.9" cy="128.8" r="5"/><circle cx="109.8" cy="113.5" r="4.2"/><circle cx="210.2" cy="113.5" r="4.2"/><circle cx="123.9" cy="101.25" r="3.5"/><circle cx="196.1" cy="101.25" r="3.5"/><circle cx="134.9" cy="91.7" r="3"/><circle cx="185.1" cy="91.7" r="3"/></g>
+</g>
+<g opacity=".6"><path stroke="currentColor" stroke-width=".9" stroke-dasharray="1 2.4" d="M152.9 45.4h14.2l-2.8 17.8h-8.6zM152.9 45.4l-2.1 11.1-1 9.8M167.1 45.4l2.1 11.1 1 9.8M155.7 63.2l.3 13.6.4 13.6M164.3 63.2l-.3 13.6-.4 13.6M160 30.6v32.6"/><ellipse cx="160" cy="34.9" rx="4.3" ry="5.5" stroke="currentColor" stroke-width=".9" stroke-dasharray="1 2.4"/><g fill="currentColor"><circle cx="160" cy="42.9" r="1.5"/><circle cx="152.9" cy="45.4" r="1.5"/><circle cx="167.1" cy="45.4" r="1.5"/><circle cx="150.8" cy="56.5" r="1.5"/><circle cx="169.2" cy="56.5" r="1.5"/><circle cx="149.8" cy="66.3" r="1.5"/><circle cx="170.2" cy="66.3" r="1.5"/><circle cx="155.7" cy="63.2" r="1.5"/><circle cx="164.3" cy="63.2" r="1.5"/><circle cx="156" cy="76.8" r="1.5"/><circle cx="164" cy="76.8" r="1.5"/><circle cx="156.4" cy="90.4" r="1.5"/><circle cx="163.6" cy="90.4" r="1.5"/><circle cx="156.6" cy="35.2" r="1.2"/><circle cx="163.4" cy="35.2" r="1.2"/><circle cx="160" cy="30.6" r="1.2"/></g></g>
+<g stroke="currentColor" stroke-width="1.25"><path d="M10 200L143.5 84.3M310 200L176.5 84.3" opacity=".8"/><path d="M144 84V30h32v54" opacity=".65"/></g>
+<g fill="currentColor"><circle cx="44.6" cy="170" r="2.6"/><circle cx="275.4" cy="170" r="2.6"/><circle cx="71.3" cy="146.9" r="2.3"/><circle cx="248.7" cy="146.9" r="2.3"/><circle cx="92.1" cy="128.8" r="2"/><circle cx="227.9" cy="128.8" r="2"/><circle cx="109.8" cy="113.5" r="1.7"/><circle cx="210.2" cy="113.5" r="1.7"/><circle cx="123.9" cy="101.25" r="1.4"/><circle cx="196.1" cy="101.25" r="1.4"/><circle cx="134.9" cy="91.7" r="1.2"/><circle cx="185.1" cy="91.7" r="1.2"/><circle cx="143.5" cy="84.3" r="1"/><circle cx="176.5" cy="84.3" r="1"/></g>
+</svg>

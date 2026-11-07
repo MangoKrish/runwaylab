@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 128" width="64" height="128" role="img" aria-labelledby="rl-figure-t" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<title id="rl-figure-t">A standing figure drawn from tracked points</title>
+<style>svg:root{color:#1F1D1B;--accent:#5B3FC4}@media(prefers-color-scheme:dark){svg:root{color:#F5F0E8;--accent:#B3A1FF}}</style>
+<g style="color:var(--accent)" stroke="currentColor">
+<g stroke-width="6" opacity=".22"><path d="M18.2 32.8h27.6M18.2 32.8 14 54.4l-1.8 19.2M45.8 32.8 50 54.4l1.8 19.2M18.2 32.8l5.4 34.8h16.8l5.4-34.8M23.6 67.6l.6 26.4.8 26.4-2 3.6M40.4 67.6l-.6 26.4-.8 26.4 2 3.6M32 4v63.6"/><ellipse cx="32" cy="12.4" rx="8.4" ry="10.4"/></g>
+</g>
+<g stroke="currentColor" stroke-width="3.2" opacity=".45"><path d="M18.2 32.8h27.6M18.2 32.8 14 54.4l-1.8 19.2M45.8 32.8 50 54.4l1.8 19.2M18.2 32.8l5.4 34.8h16.8l5.4-34.8M23.6 67.6l.6 26.4.8 26.4-2 3.6M40.4 67.6l-.6 26.4-.8 26.4 2 3.6M32 4v63.6"/><ellipse cx="32" cy="12.4" rx="8.4" ry="10.4"/></g>
+<g style="color:var(--accent)" stroke="currentColor" stroke-width="2"><path d="M18.2 32.8h27.6M18.2 32.8 14 54.4l-1.8 19.2M45.8 32.8 50 54.4l1.8 19.2M18.2 32.8l5.4 34.8h16.8l5.4-34.8M23.6 67.6l.6 26.4.8 26.4-2 3.6M40.4 67.6l-.6 26.4-.8 26.4 2 3.6M32 4v63.6"/><ellipse cx="32" cy="12.4" rx="8.4" ry="10.4"/></g>
+<g fill="currentColor"><circle cx="32" cy="28" r="2.6"/><circle cx="18.2" cy="32.8" r="2.6"/><circle cx="45.8" cy="32.8" r="2.6"/><circle cx="14" cy="54.4" r="2.6"/><circle cx="50" cy="54.4" r="2.6"/><circle cx="12.2" cy="73.6" r="2.6"/><circle cx="51.8" cy="73.6" r="2.6"/><circle cx="23.6" cy="67.6" r="2.6"/><circle cx="40.4" cy="67.6" r="2.6"/><circle cx="32" cy="67.6" r="2"/><circle cx="24.2" cy="94" r="2.6"/><circle cx="39.8" cy="94" r="2.6"/><circle cx="25" cy="120.4" r="2.6"/><circle cx="39" cy="120.4" r="2.6"/><circle cx="25.4" cy="13" r="2"/><circle cx="38.6" cy="13" r="2"/><circle cx="32" cy="4" r="2"/></g>
+</svg>

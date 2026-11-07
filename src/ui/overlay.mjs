@@ -30,3 +30,43 @@ export function drawSkeleton(ctx, pts, scale, { lineWidth = 3 } = {}) {
   }
   ctx.restore();
 }
+
+const NOT_FRAMED = [0xE8, 0xB3, 0x5A];
+const FRAMED = [0xB3, 0xA1, 0xFF];
+
+/**
+ * The framing guides on the live stage: where the head and the feet should sit. Two dashed lines across the
+ * middle of the picture, amber until the whole body fits, violet once it does.
+ * @param mix 0 (not framed) to 1 (framed); the studio eases it so the colour change fades.
+ */
+export function drawFraming(ctx, W, H, mix) {
+  const m = Math.min(1, Math.max(0, mix));
+  const [r, g, b] = NOT_FRAMED.map((c, i) => Math.round(c + (FRAMED[i] - c) * m));
+  const colour = `rgb(${r}, ${g}, ${b})`;
+  const lineWidth = Math.max(2, Math.round(W / 480));
+  const x0 = W * 0.2;
+  const x1 = W * 0.8;
+  const tick = Math.max(8, H * 0.025);
+  ctx.save();
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = colour;
+  ctx.shadowColor = 'rgba(0,0,0,0.45)';
+  ctx.shadowBlur = lineWidth * 2;
+  for (const [y, dir] of [[H * 0.06, 1], [H * 0.94, -1]]) {
+    ctx.setLineDash([lineWidth * 5, lineWidth * 4]);
+    ctx.beginPath();
+    ctx.moveTo(x0, y);
+    ctx.lineTo(x1, y);
+    ctx.stroke();
+    // Solid end ticks, pointing into the picture, so the guide reads as a bracket rather than a stray line.
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(x0, y + dir * tick);
+    ctx.lineTo(x0, y);
+    ctx.moveTo(x1, y + dir * tick);
+    ctx.lineTo(x1, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}

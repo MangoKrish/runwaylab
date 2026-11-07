@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="rl-hero" viewBox="0 0 960 720" role="img" aria-labelledby="rl-hero-t rl-hero-d" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<title id="rl-hero-t">A figure walks down a lit runway toward you</title>
+<desc id="rl-hero-d">A made-up figure drawn from the points the tracker follows, on a runway that narrows to a lit doorway. Not a real person.</desc>
+<style>svg:root{color:#1F1D1B;--accent:#5B3FC4}@media(prefers-color-scheme:dark){svg:root{color:#F5F0E8;--accent:#B3A1FF}}</style>
+<defs style="color:var(--accent)">
+<radialGradient id="rl-hero-wash" cx="480" cy="330" r="430" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".24"/><stop offset=".55" stop-color="currentColor" stop-opacity=".06"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
+<radialGradient id="rl-hero-glow" cx="480" cy="372" r="160" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".6"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
+<radialGradient id="rl-hero-rayfade" cx="480" cy="330" r="420" gradientUnits="userSpaceOnUse"><stop offset=".1" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="rl-hero-beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".3"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient>
+<linearGradient id="rl-hero-door" x1="0" y1="272" x2="0" y2="380" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".45"/><stop offset="1" stop-color="currentColor" stop-opacity=".85"/></linearGradient>
+<linearGradient id="rl-hero-sheen" x1="0" y1="380" x2="0" y2="720" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".55"/><stop offset=".45" stop-color="currentColor" stop-opacity=".12"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient>
+<linearGradient id="rl-hero-far" x1="0" y1="380" x2="0" y2="720" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity=".15"/></linearGradient>
+<linearGradient id="rl-hero-fade" x1="0" y1="538" x2="0" y2="700" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".4"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<mask id="rl-hero-mirror" maskUnits="userSpaceOnUse" x="0" y="538" width="960" height="182"><rect x="0" y="538" width="960" height="182" fill="url(#rl-hero-fade)"/></mask>
+<mask id="rl-hero-depth" maskUnits="userSpaceOnUse" x="0" y="380" width="960" height="340"><rect x="0" y="380" width="960" height="340" fill="url(#rl-hero-far)"/></mask>
+<mask id="rl-hero-rays" maskUnits="userSpaceOnUse" x="0" y="0" width="960" height="720"><rect width="960" height="720" fill="url(#rl-hero-rayfade)"/></mask>
+</defs>
+<rect width="960" height="720" fill="url(#rl-hero-wash)"/>
+<g style="color:var(--accent)">
+<g stroke="currentColor" stroke-width="1.5" opacity=".22" mask="url(#rl-hero-rays)"><path d="M480 326L40 60M480 326L250 0M480 326L710 0M480 326L920 60M480 326L0 250M480 326L960 250"/></g>
+<g fill="url(#rl-hero-beam)"><path d="M353 79H607L586 434H374z"/><path d="M392 163H568L554 409H406z"/><path d="M423 229H537L528 389H432z"/></g>
+<path d="M353 79H607M392 163H568M423 229H537" stroke="currentColor" stroke-width="7" opacity=".35"/>
+<path d="M450 380H510L660 720H300z" fill="url(#rl-hero-sheen)"/>
+<g mask="url(#rl-hero-depth)" stroke="currentColor">
+<path stroke-width="2" opacity=".5" d="M157 635H803M217.5 582H742.5M270 536H690M312 499H648M349 467H611M375 444H585M396 426H564M415 409H545M431 395H529M442 385.5H518"/>
+<path stroke-width="2.5" d="M480 385.5V389.6M480 392.9V397.9M480 401.7V407.9M480 412.3V419.8M480 424.2V433.1M480 437.6V448.2M480 452.8V465.3M480 470.7V485.4M480 490.9V508M480 513.4V533.4M480 538.8V561.9M480 568.5V595.2M480 600.6V631.4M480 635.1V670.1M480 672V711.6"/>
+</g>
+<path d="M60 720L448 380M900 720L512 380" stroke="currentColor" stroke-width="7" opacity=".3"/>
+<circle cx="480" cy="372" r="160" fill="url(#rl-hero-glow)"/>
+<rect x="450" y="272" width="60" height="108" rx="2" fill="url(#rl-hero-door)"/>
+<g fill="currentColor" opacity=".3"><circle cx="156.9" cy="635.1" r="12"/><circle cx="803.1" cy="635.1" r="12"/><circle cx="217.5" cy="582" r="12"/><circle cx="742.5" cy="582" r="12"/><circle cx="270" cy="536" r="12"/><circle cx="690" cy="536" r="12"/><circle cx="312" cy="499.2" r="12"/><circle cx="648" cy="499.2" r="12"/><circle cx="348.8" cy="467" r="9.3"/><circle cx="611.3" cy="467" r="9.3"/><circle cx="375" cy="444" r="7.5"/><circle cx="585" cy="444" r="7.5"/><circle cx="396" cy="425.6" r="6"/><circle cx="564" cy="425.6" r="6"/><circle cx="415.4" cy="408.6" r="4.5"/><circle cx="544.6" cy="408.6" r="4.5"/><circle cx="430.6" cy="395.3" r="4.5"/><circle cx="529.4" cy="395.3" r="4.5"/><circle cx="441.8" cy="385.5" r="4.5"/><circle cx="518.2" cy="385.5" r="4.5"/></g>
+</g>
+<g stroke="currentColor" stroke-width="2"><path d="M353 79H607M392 163H568M423 229H537"/><path d="M60 720L448 380M900 720L512 380" opacity=".85"/><path d="M450 380V272H510V380" opacity=".7"/></g>
+<g fill="currentColor"><circle cx="156.9" cy="635.1" r="4"/><circle cx="803.1" cy="635.1" r="4"/><circle cx="217.5" cy="582" r="4"/><circle cx="742.5" cy="582" r="4"/><circle cx="270" cy="536" r="4"/><circle cx="690" cy="536" r="4"/><circle cx="312" cy="499.2" r="4"/><circle cx="648" cy="499.2" r="4"/><circle cx="348.8" cy="467" r="3.1"/><circle cx="611.3" cy="467" r="3.1"/><circle cx="375" cy="444" r="2.5"/><circle cx="585" cy="444" r="2.5"/><circle cx="396" cy="425.6" r="2"/><circle cx="564" cy="425.6" r="2"/><circle cx="415.4" cy="408.6" r="1.5"/><circle cx="544.6" cy="408.6" r="1.5"/><circle cx="430.6" cy="395.3" r="1.5"/><circle cx="529.4" cy="395.3" r="1.5"/><circle cx="441.8" cy="385.5" r="1.5"/><circle cx="518.2" cy="385.5" r="1.5"/></g>
+<g mask="url(#rl-hero-mirror)"><use xlink:href="#rl-hero-fig" href="#rl-hero-fig" transform="matrix(1 0 0 -1 0 1076)"/></g>
+<path d="M480 112V140M480 338V572" stroke-width="1.5" stroke-dasharray="2 6" opacity=".7" stroke="currentColor" style="color:var(--accent)"/>
+<path d="M396 219H424M536 219H564M396 213v12M564 213v12M452 141h12M452 141v12M508 141h-12M508 141v12M452 209h12M452 209v-12M508 209h-12M508 209v-12M436 552h88M463 546v12M482 546v12" stroke="currentColor" stroke-width="1.25" opacity=".55"/>
+<g id="rl-hero-fig">
+<g style="color:var(--accent)" stroke="currentColor" stroke-width="7" opacity=".25"><path d="M436 217L524 221 536 285 546 339M436 217L426 281 442 333M524 221L507 331 453 327 436 217M507 331L497 421 488 517 482 529 496 545M482 529L504 539M453 327L465 423 469 501 463 507 477 517M463 507L482 511M480 147V329"/><ellipse cx="480" cy="175" rx="21" ry="27"/></g>
+<g stroke="currentColor" stroke-width="3.8" opacity=".45"><path d="M436 217L524 221 536 285 546 339M436 217L426 281 442 333M524 221L507 331 453 327 436 217M507 331L497 421 488 517 482 529 496 545M482 529L504 539M453 327L465 423 469 501 463 507 477 517M463 507L482 511M480 147V329"/><ellipse cx="480" cy="175" rx="21" ry="27"/></g>
+<g style="color:var(--accent)" stroke="currentColor" stroke-width="2.4"><path d="M436 217L524 221 536 285 546 339M436 217L426 281 442 333M524 221L507 331 453 327 436 217M507 331L497 421 488 517 482 529 496 545M482 529L504 539M453 327L465 423 469 501 463 507 477 517M463 507L482 511M480 147V329"/><ellipse cx="480" cy="175" rx="21" ry="27"/></g>
+<g fill="currentColor"><circle cx="480" cy="205" r="4"/><circle cx="436" cy="217" r="4"/><circle cx="524" cy="221" r="4"/><circle cx="426" cy="281" r="4"/><circle cx="536" cy="285" r="4"/><circle cx="442" cy="333" r="4"/><circle cx="546" cy="339" r="4"/><circle cx="453" cy="327" r="4"/><circle cx="507" cy="331" r="4"/><circle cx="480" cy="329" r="3"/><circle cx="465" cy="423" r="4"/><circle cx="497" cy="421" r="4"/><circle cx="469" cy="501" r="4"/><circle cx="488" cy="517" r="4"/><circle cx="459" cy="177" r="3"/><circle cx="501" cy="177" r="3"/><circle cx="480" cy="147" r="3"/></g>
+<g fill="currentColor"><circle cx="463" cy="507" r="2.4"/><circle cx="482" cy="529" r="2.4"/><circle cx="477" cy="517" r="2.4"/><circle cx="496" cy="545" r="2.4"/></g>
+</g>
+</svg>
