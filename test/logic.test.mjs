@@ -1069,3 +1069,33 @@ test('judging estimate: learns from this device, and never claims to be done ear
   assert.equal(timeLeftText(3, 10), 'About 7 seconds left');
   assert.match(timeLeftText(30, 10), /Slower than usual \(30 s\)/);
 });
+
+test('reel: finds the tempo and first beat of a click track', async () => {
+  const { detectBeat } = await import('../scripts/reel.mjs');
+  const rate = 11025;
+  const samples = new Float32Array(rate * 20);
+  const period = 60 / 118;
+  for (let i = 0; i < samples.length; i++) {
+    const t = i / rate;
+    const since = (t - 0.4) % period;
+    samples[i] = t >= 0.4 ? 0.8 * Math.sin(2 * Math.PI * 60 * t) * Math.exp(-25 * since) : 0;
+  }
+  const beat = detectBeat(samples, rate);
+  assert.equal(beat.bpm, 118);
+  assert.ok(Math.abs(beat.firstBeat - 0.4) < 0.03, `first beat at ${beat.firstBeat}`);
+  assert.equal(detectBeat(samples, rate, 120).bpm, 120, 'a known tempo is used as given');
+});
+
+test('reel: every part lasts whole beats, the turn is slowed and the best walk opens and closes', async () => {
+  const { planReel } = await import('../scripts/reel.mjs');
+  const frames = Array.from({ length: 300 }, (_, i) => ({ t: i / 30, status: 'valid', pts: [[100, 100], [120, 300]] }));
+  const walk = (name) => ({ file: name, an: { frames, duration: 10, W: 1920, H: 1080, phases: { approach: [0.5, 4.5], turn: [4.5, 5.5], back: [5.5, 9.5] }, measured: { ok: true, points: 50, max: 70 } } });
+  const best = walk('best');
+  const parts = planReel([best, walk('second')], 60 / 120);
+  assert.equal(parts[0].kind, 'hook');
+  assert.equal(parts.at(-1).kind, 'outro');
+  assert.equal(parts[0].walk, best);
+  assert.ok(parts.every((p) => Number.isInteger(p.beats) && p.beats > 0));
+  assert.ok(parts.some((p) => p.speed === 0.5), 'slow motion on the turn');
+  assert.deepEqual(parts.filter((p) => p.label).map((p) => p.label), [1, 2]);
+});

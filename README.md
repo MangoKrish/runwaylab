@@ -77,7 +77,23 @@ No published study sets targets for a runway walk, so the rules are ours and thi
 
 The foot scale gives full marks at 2.5% of height and none at 7%. Ordinary walkers at 4.7% earn about 10 of the 20 points.
 
-### Checked against real footage
+### Making a reel from your walks
+
+`npm run reel` turns walk videos into a vertical 1080 × 1920 reel for Instagram, entirely on this computer:
+
+```bash
+npm run reel                                    # every clip in recordings/, with the app's house track
+npm run reel -- ~/Downloads/walks --music song.mp3 --music-start 32 --out pitch.mp4
+```
+
+The real tracker finds the walk toward the camera, the turn and the walk back in each clip, and scores it. The best
+walk opens with a freeze frame and its tracked skeleton, then each walk is cut on the beat: jump cuts alternating wide
+and close, the turn at half speed, the walk back sped up, and a score card at the end. The tempo of the app's own
+tracks is known; for other music it is detected, or pass `--bpm`. `--music-start` jumps to the drop, snapped to a
+beat. `--max` sets how many walks (default 4, best first) and `--title` the opening line. Reels go to `reels/`,
+which git and Vercel ignore. The scores are the measured 70 points, since Gemini's half lives in the browser.
+
+## Checked against real footage
 
 To test the rules on real walks, real footage went through the app's own tracker and measuring code:
 
