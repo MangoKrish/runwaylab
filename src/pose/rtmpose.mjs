@@ -32,6 +32,16 @@ export const WHOLE_BODY_SLOTS = {
 const CORE = [5, 6, 11, 12];
 const LANDMARKS = LANDMARK_COUNT;
 
+// This build of ONNX Runtime keeps one stack for the whole page, so two calls under way at once corrupt it, even on
+// different models. Leaving the studio can do that: its live tracker is mid-frame as it closes and the next one
+// starts. So everything that touches the runtime takes its turn, across every tracker on the page.
+let lastTurn = Promise.resolve();
+function inTurn(work) {
+  const result = lastTurn.then(work);
+  lastTurn = result.catch(() => {});
+  return result;
+}
+
 const iou = (a, b) => {
   const x0 = Math.max(a.x0, b.x0);
   const y0 = Math.max(a.y0, b.y0);
@@ -151,11 +161,11 @@ export async function createRtmPose(base, { modelUrl = null, slots = SLOTS, name
   ort.env.wasm.numThreads = 1; // More threads would need extra page headers, and the GPU does the heavy work.
 
   const canUseGpu = !!(await navigator.gpu?.requestAdapter?.().catch(() => null));
-  const poser = await ort.InferenceSession.create(modelUrl || `${base}vendor/models/rtmpose-m-halpe26.onnx`, {
+  const poser = await inTurn(() => ort.InferenceSession.create(modelUrl || `${base}vendor/models/rtmpose-m-halpe26.onnx`, {
     executionProviders: canUseGpu ? ['webgpu', 'wasm'] : ['wasm'],
-  });
+  }));
   // The detector runs now and then, and it is small enough for the CPU.
-  const detector = await ort.InferenceSession.create(`${base}vendor/models/rtmdet-nano-person.onnx`, { executionProviders: ['wasm'] });
+  const detector = await inTurn(() => ort.InferenceSession.create(`${base}vendor/models/rtmdet-nano-person.onnx`, { executionProviders: ['wasm'] }));
 
   const poseCanvas = new OffscreenCanvas(POSE_WIDTH, POSE_HEIGHT);
   const poseCtx = poseCanvas.getContext('2d', { willReadFrequently: true });
@@ -166,6 +176,7 @@ export async function createRtmPose(base, { modelUrl = null, slots = SLOTS, name
 
   let box = null;
   let framesSinceCheck = 0;
+  let closed = false;
 
   const sizeOf = (source) => ({ W: source.videoWidth || source.width, H: source.videoHeight || source.height });
 
@@ -223,27 +234,34 @@ export async function createRtmPose(base, { modelUrl = null, slots = SLOTS, name
     delegate: canUseGpu ? 'GPU' : 'CPU',
     model: name,
     /** Asynchronous, unlike MediaPipe's: callers await it either way. */
-    async detect(source) {
-      const { W, H } = sizeOf(source);
-      framesSinceCheck++;
-      if (!box || framesSinceCheck >= CHECK_EVERY_FRAMES) {
-        const chosen = chooseBox(await findPeople(source, W, H), box, W);
-        framesSinceCheck = 0;
-        if (chosen) box = chosen;
-        else if (!box) return [];
-      }
-      const points = await placePoints(source, box);
-      const next = boxFromPoints(points);
-      if (!next) {
-        box = null;
-        return [];
-      }
-      box = next;
-      return [toLandmarks(points, W, H, slots)];
+    detect(source) {
+      return inTurn(async () => {
+        if (closed) return [];
+        const { W, H } = sizeOf(source);
+        framesSinceCheck++;
+        if (!box || framesSinceCheck >= CHECK_EVERY_FRAMES) {
+          const chosen = chooseBox(await findPeople(source, W, H), box, W);
+          framesSinceCheck = 0;
+          if (chosen) box = chosen;
+          else if (!box) return [];
+        }
+        const points = await placePoints(source, box);
+        const next = boxFromPoints(points);
+        if (!next) {
+          box = null;
+          return [];
+        }
+        box = next;
+        return [toLandmarks(points, W, H, slots)];
+      });
     },
+    /** Waits its turn too, so a frame still being tracked finishes first. */
     close() {
-      poser.release?.();
-      detector.release?.();
+      closed = true;
+      inTurn(async () => {
+        await poser.release?.();
+        await detector.release?.();
+      }).catch(() => {});
     },
   };
 }
