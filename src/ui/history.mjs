@@ -1,5 +1,6 @@
 import { h, button, clear } from './dom.mjs';
-import { listWalks, deleteWalk } from '../store/db.mjs';
+import { listWalks, deleteWalk, loadWalk } from '../store/db.mjs';
+import { recordingName } from '../store/keep.mjs';
 import { walkRow } from './home.mjs';
 
 const has = (x) => x !== null && x !== undefined;
@@ -28,7 +29,7 @@ export function historyScreen(root) {
     if (!walks.length) {
       list.append(h('div', { class: 'rw-empty' },
         h('p', { class: 'rw-empty__title' }, 'Nothing saved yet.'),
-        h('p', { class: 'rw-muted' }, 'Finish a walk and press Save to keep it on this device.'),
+        h('p', { class: 'rw-muted' }, 'Every walk you record is kept here automatically.'),
         h('a', { class: 'rw-btn rw-btn--solid', href: '#/studio' }, 'Start a walk')));
       return;
     }
@@ -52,6 +53,23 @@ export function historyScreen(root) {
     }
   }
 
+  // One file per walk, named by date and time, for editing into a video.
+  async function downloadAll() {
+    status.textContent = `Preparing ${walks.length} videos.`;
+    let done = 0;
+    for (const walk of walks) {
+      const full = await loadWalk(walk.id).catch(() => null);
+      if (!alive) return;
+      if (!full?.blob) continue;
+      const url = URL.createObjectURL(full.blob);
+      h('a', { href: url, download: recordingName(full) }).click();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      done++;
+      await new Promise((r) => setTimeout(r, 400)); // Browsers drop downloads started all at once.
+    }
+    status.textContent = `${done} ${done === 1 ? 'video' : 'videos'} sent to your downloads.`;
+  }
+
   const choose = (label, options, value, onChange) => h('label', { class: 'rw-field rw-field--inline' },
     h('span', null, label),
     h('select', { onChange: (e) => onChange(e.target.value) },
@@ -64,6 +82,7 @@ export function historyScreen(root) {
         h('p', { class: 'rw-muted' }, 'On this device only. Clearing this browser\'s site data removes them.')),
       h('a', { class: 'rw-btn rw-btn--solid', href: '#/studio' }, 'Start a walk')),
     h('div', { class: 'rw-toolbar' },
+      button('Download all videos', () => walks.length && downloadAll()),
       choose('Show', Object.fromEntries(Object.entries(FILTERS).map(([k, v]) => [k, v.label])), filter, (v) => { filter = v; render(); }),
       choose('Sort by', { newest: 'Newest first', top: 'Highest score' }, sort, (v) => { sort = v; render(); })),
     status,

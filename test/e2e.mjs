@@ -310,21 +310,15 @@ async function main() {
     await tab.go('#/studio');
     await tab.until('!!document.querySelector("#rw-upload")', 'upload input');
     await tab.upload('#rw-upload', fx.noPerson);
-    check('temporary status shown', await tab.until(tab.hasText('Temporary: not saved anywhere'), 'temporary pill', 15000));
+    check('every recording is kept without asking', await tab.until(tab.hasText('Saved on this device'), 'saved pill', 15000));
     check('honest no-score result', await tab.until(tab.hasText('We could not score this one'), 'no-score result', 120000));
     text = await tab.text();
     check('says no person was found', text.includes('could not find a person'));
     check('no invented measurements', (text.match(/Not enough data/g) || []).length >= 8, `${(text.match(/Not enough data/g) || []).length} cards`);
     await tab.shot('no-person');
-    tab.dialogAccept = false;
     tab.dialogs.length = 0;
     await tab.js(`location.hash = '#/history'`);
-    await sleep(400);
-    check('warns before leaving an unsaved walk', tab.dialogs.some((d) => d.includes('not saved')));
-    check('staying keeps the walk open', (await tab.js('location.hash')).startsWith('#/review/') && (await tab.text()).includes('We could not score'));
-    tab.dialogAccept = true;
-    await tab.js(`location.hash = '#/history'`);
-    check('leaving goes through', await tab.until(`location.hash === '#/history'`, 'history route', 3000));
+    check('leaving a kept walk needs no warning', await tab.until(`location.hash === '#/history'`, 'history route', 3000) && !tab.dialogs.some((d) => d.includes('not saved')));
     await sleep(300);
 
     // ── cancel ──
@@ -367,7 +361,7 @@ async function main() {
       process.env.GEMINI_API_KEY = 'fake-key-for-tests';
       const name = 'E2E walk';
       await tab.js(`(() => { const i = document.querySelector('.rw-name'); i.value = ${JSON.stringify(name)}; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
-      await tab.clickButton('Save to this device');
+      await tab.clickButton('Save changes');
       check('save is acknowledged only after commit', await tab.until(tab.hasText('Saved on this device'), 'saved pill', 15000));
       const id = (await tab.js('location.hash')).split('/')[2];
       await tab.reload();
@@ -396,17 +390,15 @@ async function main() {
       check('stills strip shown to the walker', (await tab.js(`document.querySelectorAll('.rw-still').length`)) === images.length);
       const moment = await tab.js(`(async () => { const b = document.querySelector('.rw-moments button'); b.click(); await new Promise((r) => setTimeout(r, 300)); return document.querySelector('.rw-player__video').currentTime; })()`);
       check('a moment seeks the video', moment > 0, `${moment.toFixed(2)} s`);
-      check('judging marks the saved walk as changed', (await tab.text()).includes('unsaved changes'));
-      await tab.clickButton('Save changes');
-      check('saving changes commits', await tab.until(tab.hasText('All changes saved'), 'all saved', 15000));
+      check('the judgment is saved without asking', await tab.until(tab.hasText('All changes saved'), 'all saved', 15000));
       await tab.shot('judged');
       await tab.shot('judged-full', true);
       await tab.go('#/history');
       check('history lists it', await tab.until(tab.hasText(name), 'history row', 8000));
       text = await tab.text();
       check('history shows score and status', text.includes(String(shownTotal)) && text.includes('Judged'));
-      await tab.js(`(() => { const s = document.querySelector('select'); s.value = 'none'; s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
-      check('filter narrows the list', await tab.until(tab.hasText('No saved walks match'), 'filter result', 3000));
+      await tab.js(`(() => { const s = document.querySelector('select'); s.value = 'judged'; s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+      check('filter narrows the list', await tab.until(`/^1 of [2-9]\\d* saved walks/.test(document.querySelector('[role=status]').textContent)`, 'filter result', 3000));
       await tab.shot('history');
 
       section('Delete');
@@ -414,7 +406,7 @@ async function main() {
       await tab.until(tab.hasText('Saved on this device'), 'reopened', 10000);
       await tab.clickButton('Delete');
       check('delete goes home', await tab.until(`location.hash === '#/'`, 'home route', 8000));
-      const left = await tab.js(`new Promise((resolve) => { const r = indexedDB.open('runwaylab', 1); r.onsuccess = () => { const db = r.result; const tx = db.transaction(['summaries', 'details', 'videos']); const counts = ['summaries', 'details', 'videos'].map((n) => tx.objectStore(n).count()); tx.oncomplete = () => resolve(counts.map((c) => c.result)); }; })`);
+      const left = await tab.js(`new Promise((resolve) => { const r = indexedDB.open('runwaylab', 1); r.onsuccess = () => { const db = r.result; const tx = db.transaction(['summaries', 'details', 'videos']); const counts = ['summaries', 'details', 'videos'].map((n) => tx.objectStore(n).count(${JSON.stringify(id)})); tx.oncomplete = () => resolve(counts.map((c) => c.result)); }; })`);
       check('video, analysis and summary are all gone', left.every((n) => n === 0), left.join(','));
       await tab.go(`#/review/${id}`);
       check('old link explains itself', await tab.until(tab.hasText('This walk is not here'), 'missing walk', 8000));

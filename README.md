@@ -164,7 +164,7 @@ The wall recomputes the measured half on the server from the posted skeleton, an
 
 ## Privacy
 
-Your video stays in the browser. It is temporary until you press Save, and it is never uploaded. Only two things can leave the device, each only if you choose: pixelated stills for Gemini, and your name, score and skeleton movement if you post to the wall. A content security policy limits the page to connecting to its own site, which also stops MediaPipe's own metrics calls.
+Your video stays in the browser. Every recording is kept automatically in this browser's saved walks, and the Saved walks page can download them all. Under `npm run dev` each video is also written to `recordings/` in the project folder, which git and Vercel both ignore. It is never uploaded anywhere else. Only two things can leave the device, each only if you choose: pixelated stills for Gemini, and your name, score and skeleton movement if you post to the wall. A content security policy limits the page to connecting to its own site, which also stops MediaPipe's own metrics calls.
 
 Gemini's free tier may use what it receives to improve Google's products. The consent text says so, unless `GEMINI_PAID_TIER=1` is set.
 

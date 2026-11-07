@@ -13,6 +13,7 @@ import { makeStills } from '../judge/stills.mjs';
 import { judgeStatus, requestJudgement } from '../judge/client.mjs';
 import { expectedSeconds, rememberSeconds, progressAt, timeLeftText } from '../judge/eta.mjs';
 import { saveWalk, loadWalk, deleteWalk } from '../store/db.mjs';
+import { copyToThisComputer, recordingName } from '../store/keep.mjs';
 import { postToWall, removeFromWall, signIn, signOut, wallInfo } from '../wall/client.mjs';
 
 const STATUS_WORDS = {
@@ -129,6 +130,11 @@ export function reviewScreen(root, app, id) {
       if (alive) {
         renderActions();
         renderStatus();
+        if (saveAgain && !saveError) {
+          saveAgain = false;
+          session.dirty = true;
+          keepRecording();
+        }
       }
     }
   }
@@ -149,6 +155,14 @@ export function reviewScreen(root, app, id) {
   }
 
   const currentTotal = () => totalScore(session.analysis?.measured, session.judge);
+
+  /** Every recording is saved without asking: on arrival, after the analysis, and after judging. */
+  let saveAgain = false;
+  function keepRecording() {
+    if (session.isSample || !session.blob || (session.saved && !session.dirty)) return;
+    if (saving) saveAgain = true; // Something changed mid-save, so save once more when it finishes.
+    else onSave();
+  }
 
   // ── analysis ──
   async function runAnalysis() {
@@ -177,6 +191,7 @@ export function reviewScreen(root, app, id) {
       player.setAnalysis(session.analysis);
       announce.textContent = 'Analysis finished';
       renderAll();
+      keepRecording();
       maybeAutoJudge();
     } catch (err) {
       if (run !== analysisRun || !alive) return;
@@ -283,6 +298,9 @@ export function reviewScreen(root, app, id) {
         judgeState = { kind: 'done' };
         animateScore = true;
         announce.textContent = `Score: ${currentTotal()} out of 100`;
+        renderAll();
+        keepRecording();
+        return;
       } else {
         judgeState = { kind: 'failed', message: answer.message };
       }
@@ -484,7 +502,7 @@ export function reviewScreen(root, app, id) {
       canDownload ? h('div', { class: 'rw-actions' },
         button('Save the video file', () => {
           const url = URL.createObjectURL(session.blob);
-          const link = h('a', { href: url, download: `${session.name || 'walk'}.${(session.mime || '').includes('webm') ? 'webm' : (session.mime || '').includes('quicktime') ? 'mov' : 'mp4'}` });
+          const link = h('a', { href: url, download: recordingName(session) });
           link.click();
           setTimeout(() => URL.revokeObjectURL(url), 10_000);
         }),
@@ -699,6 +717,8 @@ export function reviewScreen(root, app, id) {
       });
     }
 
+    if (!session.saved) copyToThisComputer(session);
+    keepRecording();
     if (session.blob && !session.analysis) runAnalysis();
     else renderAll();
     root.querySelector('h1')?.focus({ preventScroll: true });

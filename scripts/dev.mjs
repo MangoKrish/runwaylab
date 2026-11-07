@@ -12,7 +12,7 @@ const TYPES = {
   '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.wasm': 'application/wasm', '.mp4': 'video/mp4', '.webm': 'video/webm',
   '.mov': 'video/quicktime', '.mp3': 'audio/mpeg', '.onnx': 'application/octet-stream', '.task': 'application/octet-stream', '.ogg': 'audio/ogg',
 };
-const PRIVATE = /^\/(\.env|\.git|node_modules|test-output)/;
+const PRIVATE = /^\/(\.env|\.git|node_modules|test-output|recordings)/;
 
 function loadEnvFile() {
   const file = path.join(ROOT, '.env.local');
@@ -81,10 +81,29 @@ function sendFile(req, res, full) {
   return fs.createReadStream(full).pipe(res);
 }
 
-export function startDevServer({ port = 4700, quiet = false, extraFiles = null } = {}) {
+const RECORDINGS = path.join(ROOT, 'recordings');
+
+/** Writes a recording the page sends into recordings/. Only npm run dev turns this on; it never exists on Vercel. */
+async function keepRecording(req, res, url) {
+  const name = path.basename(url.searchParams.get('name') || '');
+  const fromThisComputer = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+  if (req.method !== 'POST' || !fromThisComputer || !/^[\w-]+\.(mp4|mov|webm)$/.test(name)) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    return res.end('{"error":"bad request"}');
+  }
+  const body = await readBody(req);
+  fs.mkdirSync(RECORDINGS, { recursive: true });
+  fs.writeFileSync(path.join(RECORDINGS, name), body);
+  console.log(`[keep] recordings/${name} (${(body.length / 1048576).toFixed(1)} MB)`);
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  return res.end('{"ok":true}');
+}
+
+export function startDevServer({ port = 4700, quiet = false, extraFiles = null, keepRecordings = false } = {}) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x');
     try {
+      if (keepRecordings && url.pathname === '/dev/recordings') return await keepRecording(req, res, url);
       const fn = url.pathname.match(/^\/api\/([^/]+)$/);
       if (fn) return await runFunction(req, res, fn[1]);
       if (extraFiles?.[url.pathname]) return sendFile(req, res, extraFiles[url.pathname]);
@@ -105,7 +124,7 @@ export function startDevServer({ port = 4700, quiet = false, extraFiles = null }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  startDevServer({ port: Number(process.env.PORT) || 4700 }).catch((err) => {
+  startDevServer({ port: Number(process.env.PORT) || 4700, keepRecordings: true }).catch((err) => {
     console.error(err.message);
     process.exit(1);
   });
