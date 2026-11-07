@@ -110,21 +110,40 @@ function cleanMeasurements(input) {
 
 /**
  * A 503 means the model is busy, which Gemini's Flash models do during demand spikes. Wait and try again,
- * then try a second model once, so a busy minute does not cost a walker their judgment.
+ * then try other models once each, so a busy minute does not cost a walker their judgment. A 429 means this model's
+ * quota has run out. The free tier allows 20 requests per model per day, so waiting will not help, and the next
+ * model has its own allowance.
  */
+const FALLBACK_MODELS = 'gemini-3.8-flash,gemini-3.7-flash,gemini-3.5-flash';
+
 async function askWithRetries(stills, measurements, key, ask) {
   const wait = Number(process.env.GEMINI_RETRY_MS ?? 1500);
-  const fallback = process.env.GEMINI_FALLBACK_MODEL ?? 'gemini-3.8-flash';
-  const attempts = [MODEL(), MODEL(), ...(fallback && fallback !== MODEL() ? [fallback] : [MODEL()])];
+  const others = (process.env.GEMINI_FALLBACK_MODEL ?? FALLBACK_MODELS).split(',').map((m) => m.trim()).filter((m) => m && m !== MODEL());
+  const attempts = [MODEL(), MODEL(), ...others];
+  const usedUp = new Set();
   let res = null;
+  let busy = null;
   let model = MODEL();
   for (let i = 0; i < attempts.length; i++) {
-    if (i > 0) await new Promise((r) => setTimeout(r, wait * i));
+    if (usedUp.has(attempts[i])) continue;
+    if (res?.status === 503) await new Promise((r) => setTimeout(r, wait));
     model = attempts[i];
     res = await ask(stills, measurements, key, model);
-    if (res.status !== 503) break;
+    // Quota is counted per model, so one that has run out says nothing about the next.
+    if (res.status === 429) usedUp.add(model);
+    else if (res.status === 503) busy = res;
+    else break;
   }
+  // If any model was only busy, trying again later can still work, so that is the honest thing to report.
+  if (res.status === 429 && busy) res = busy;
   return { res, model };
+}
+
+/** Whether Gemini says this limit lasts all day, which is different advice from a limit that clears in a minute. */
+async function isDailyLimit(res) {
+  const body = await res.clone().json().catch(() => null);
+  const failure = body?.error?.details?.find((d) => d['@type']?.includes('QuotaFailure'));
+  return !!failure?.violations?.some((v) => /PerDay/i.test(v.quotaId ?? ''));
 }
 
 async function askInEitherFormat(stills, measurements, key, model) {
@@ -180,7 +199,10 @@ export async function POST(request) {
   }
 
   if (res.status === 503) return refuse(503, 'busy', 'Gemini is very busy right now. Wait a moment and try again.');
-  if (res.status === 429) return refuse(429, 'rate_limited', 'The judge is at its request limit. Wait a minute and try again.');
+  if (res.status === 429) {
+    if (await isDailyLimit(res)) return refuse(429, 'out_of_quota', 'The judge has used all of today\'s requests, so this walk keeps its measured score. More become available at midnight Pacific time.');
+    return refuse(429, 'rate_limited', 'The judge is at its request limit. Wait a minute and try again.');
+  }
   if (res.status === 401 || res.status === 403) return refuse(502, 'bad_key', 'Gemini rejected this server\'s API key.');
   if (res.status === 404) return refuse(502, 'bad_model', `Gemini does not recognise the model "${MODEL()}".`);
   if (!res.ok) return refuse(502, 'upstream', `Gemini returned an error (${res.status}). Try again.`);

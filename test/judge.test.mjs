@@ -157,7 +157,45 @@ test('if everything is busy, a clear message and a bounded number of calls', asy
   const res = await call(goodBody);
   assert.equal(res.status, 503);
   assert.equal((await res.json()).code, 'busy');
-  assert.equal(requests, 3);
+  assert.equal(requests, 5, 'the main model twice, then the three others once each');
+});
+
+const DAILY_LIMIT = { error: { status: 'RESOURCE_EXHAUSTED', details: [{ '@type': 'type.googleapis.com/google.rpc.QuotaFailure', violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', quotaValue: '20' }] }] } };
+
+test('a model out of quota is not retried, and the next model answers', async () => {
+  setEnv();
+  process.env.GEMINI_RETRY_MS = '1';
+  const urls = [];
+  reply = (req) => {
+    urls.push(req.url);
+    return req.url.includes('gemini-3.6-flash') ? { status: 429, body: DAILY_LIMIT } : textReply(GOOD);
+  };
+  const res = await call(goodBody);
+  assert.equal(res.status, 200);
+  assert.equal(urls.filter((u) => u.includes('gemini-3.6-flash')).length, 1, 'retrying the same model would only fail again');
+  assert.equal((await res.json()).model, 'gemini-3.8-flash');
+});
+
+test('one model out of quota and another busy reports busy, because trying again can still work', async () => {
+  setEnv();
+  process.env.GEMINI_RETRY_MS = '1';
+  reply = (req) => (req.url.includes('gemini-3.8-flash') ? { status: 503, body: {} } : { status: 429, body: DAILY_LIMIT });
+  const res = await call(goodBody);
+  assert.equal(res.status, 503);
+  assert.equal((await res.json()).code, 'busy');
+});
+
+test('when every model has used its day, it says so rather than "wait a minute"', async () => {
+  setEnv();
+  process.env.GEMINI_RETRY_MS = '1';
+  requests = 0;
+  reply = { status: 429, body: DAILY_LIMIT };
+  const res = await call(goodBody);
+  assert.equal(res.status, 429);
+  const body = await res.json();
+  assert.equal(body.code, 'out_of_quota');
+  assert.match(body.message, /keeps its measured score/);
+  assert.equal(requests, 4, 'each model once');
 });
 
 test('errors that retrying cannot fix are not retried', async () => {

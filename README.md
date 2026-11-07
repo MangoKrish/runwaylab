@@ -19,6 +19,8 @@ Open <http://localhost:4700> and allow the camera. With no key it still works, a
 
 To add the judge, copy `.env.example` to `.env.local` and add a Gemini key from [mlh.link/aistudio](https://mlh.link/aistudio). `.env.local` is ignored by git, so the key stays on your computer.
 
+The free tier allows 20 requests per model per day, resetting at midnight Pacific time. Each judged walk is one request, and the judge moves on to the next model when one runs out or is busy. For a busy demo, turn on billing in AI Studio and set `GEMINI_PAID_TIER=1`. When no model is left, the walk keeps its measured score and says why.
+
 ### Filming
 
 - Put the camera about waist height, with at least 6 m of clear floor in front of it.
