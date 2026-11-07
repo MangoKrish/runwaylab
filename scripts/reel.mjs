@@ -24,7 +24,7 @@ const OUT_H = 1920;
 const FPS = 30;
 const ACCENT = '#a78bfa';
 // The app's own tracks, with the tempo already known.
-const TRACKS = {
+export const TRACKS = {
   'lets-bring-this-house-down.mp3': { bpm: 113, credit: 'Music: "Lets Bring This House Down" by Antti Luode, CC BY 3.0' },
   'rollin-at-5-electronic.mp3': { bpm: 105, credit: 'Music: "Rollin at 5" by Kevin MacLeod, CC BY 3.0' },
   'aitech.mp3': { bpm: 105, credit: 'Music: "Aitech" by Kevin MacLeod, CC BY 3.0' },

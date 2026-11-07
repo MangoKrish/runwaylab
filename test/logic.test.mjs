@@ -1101,3 +1101,49 @@ test('reel: every part lasts whole beats, the turn is slowed and the best walk o
   assert.ok(parts.some((p) => p.speed === 0.5), 'slow motion on the turn');
   assert.deepEqual(parts.filter((p) => p.label).map((p) => p.label), [1, 2]);
 });
+
+// ── showreel planner ──
+const showreel = await import('../scripts/showreel/plan.mjs');
+function fakeWalk() {
+  // Toward the camera from 1 to 4 s and 10 to 13 s, walking away from 5 to 8 s.
+  const frames = Array.from({ length: 450 }, (_, i) => {
+    const t = i / 30;
+    const away = t > 5 && t < 8;
+    const pts = Array(38).fill(null);
+    pts[11] = [away ? 900 : 1000, 400]; pts[12] = [away ? 1000 : 900, 400]; pts[23] = [930, 700]; pts[24] = [970, 700]; pts[27] = [930, 1100]; pts[28] = [970, 1100]; pts[0] = [950, 250];
+    return { t, status: 'valid', pts };
+  });
+  return { W: 1920, H: 1440, duration: 15, frames, phases: { approach: [1, 4], turn: [4, 5], back: [5, 8], windows: [[1, 4], [5, 8], [10, 13]] },
+    metrics: { shoulderSway: { ok: true, value: 1.54 }, headMovement: { ok: true, value: 0.221 }, footLine: { ok: true, value: 9.7 }, turnTime: { ok: true, value: 1.1 }, cadence: 96, stepCount: 26 },
+    measured: { ok: true, points: 44, max: 70, parts: [{ label: 'Posture', points: 17, max: 18 }, { label: 'Arms', points: 4, max: 4 }] } };
+}
+
+test('showreel: windows are split by which way the shoulders face', () => {
+  const { toward, away } = showreel.splitWindows(fakeWalk());
+  assert.deepEqual(toward, [[1, 4], [10, 13]]);
+  assert.deepEqual(away, [[5, 8]]);
+});
+
+test('showreel: about 15 s at any tempo, ending on the score, with real numbers', () => {
+  for (const bpm of [105, 130, 150]) {
+    const plan = showreel.planShowreel(fakeWalk(), { bpm, beat: 60 / bpm });
+    assert.ok(plan.seconds > 12 && plan.seconds < 16.5, `${bpm} BPM gives ${plan.seconds.toFixed(1)} s`);
+    assert.equal(plan.montage.at(-1).focus, 'whip', 'the montage always whips into the next section');
+    assert.equal(plan.montage.length, plan.sections.chrono - plan.sections.montage);
+  }
+  const plan = showreel.planShowreel(fakeWalk(), { bpm: 130, beat: 60 / 130 });
+  assert.equal(plan.values.shoulderRock, 1.5);
+  assert.equal(plan.values.score, 44);
+  assert.equal(plan.captions.chronoTitle, '26 STEPS');
+  assert.ok(plan.drop.start >= 1 && plan.drop.start < 1.1, 'the drop opens on the first walk toward the camera');
+});
+
+test('showreel: captions differ from recent edits, and given ones win', () => {
+  const history = showreel.CAPTIONS.intro.slice(0, -1).map((intro) => ({ captions: { intro } }));
+  const plan = showreel.planShowreel(fakeWalk(), { bpm: 130, beat: 60 / 130 }, { seed: 5, history });
+  assert.deepEqual(plan.captions.intro, showreel.CAPTIONS.intro.at(-1), 'the one set not used yet');
+  const custom = showreel.planShowreel(fakeWalk(), { bpm: 130, beat: 60 / 130 }, { captions: { intro: ['A', 'B', 'C'], turn: 'SPIN' }, socials: 'sam.walks' });
+  assert.deepEqual(custom.captions.intro, ['A', 'B', 'C']);
+  assert.equal(custom.captions.turn, 'SPIN');
+  assert.equal(custom.socials, '@sam.walks');
+});

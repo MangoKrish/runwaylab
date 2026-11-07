@@ -77,7 +77,29 @@ No published study sets targets for a runway walk, so the rules are ours and thi
 
 The foot scale gives full marks at 2.5% of height and none at 7%. Ordinary walkers at 4.7% earn about 10 of the 20 points.
 
-### Making a reel from your walks
+### Showreel edits
+
+`npm run showreel` makes a 15-second, 60 fps motion-graphics edit of one walk, cut to a music drop, entirely on this
+computer:
+
+```bash
+npm run showreel -- ~/Downloads/2026-11-07_0827_5ee314ce.webm
+npm run showreel -- walk.webm --music song.mp3 --drop 62.5 --palette ember --socials @name
+npm run showreel -- walk.webm --intro "NO JUDGES.|JUST|MATH." --turn "PIVOT" --preview
+```
+
+The style, beat by beat: three intro words slam in on the three beats before the drop over a frozen frame that turns
+into a skeleton; the drop opens on the first walk with live tracking and the walker's real numbers; the turn plays in
+slow motion inside a dial; a montage gives one detail per beat (shoulders, feet, a triptych, head, a mirror,
+posture lines, the back) and whips into a chronophotograph of the last walk; the score builds bar by bar and slams.
+
+Each edit is different: the next unused drop in the music library (`~/Music/RunwayLab`, the app's tracks and the
+phonk mixes in Downloads), a palette not used in the last two edits (violet, ember, acid or ice), and an intro line no
+recent edit used. Every caption can be set by hand. Socials come from `--socials` or the `.json` saved beside a
+recording, and appear as a tag. `--preview` writes 12 stills instead of a video. Edits and their history go to
+`reels/`, which git and Vercel ignore. Music from the mixes is not cleared for posting.
+
+## Making a reel from your walks
 
 `npm run reel` turns walk videos into a vertical 1080 × 1920 reel for Instagram, entirely on this computer:
 
