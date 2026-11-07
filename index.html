@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RunwayLab</title>
+<meta name="description" content="Walk toward a camera and back. Pose tracking measures your walk in the browser, and Gemini judges your presence and style.">
+<meta name="robots" content="noindex">
+<!-- This page may only talk to its own site. That is what makes "only the stills leave" true by enforcement
+     rather than by promise. wasm-unsafe-eval lets the pose trackers run, and blob: is for local video. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' blob: data:; worker-src 'self' blob:; base-uri 'self'; form-action 'none'">
+<link rel="icon" href="favicon.svg">
+<link rel="stylesheet" href="src/fonts.css">
+<link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+<a class="rw-skip" href="#rw-root">Skip to content</a>
+<div id="rw-root" class="rw-app">
+  <p class="rw-boot" id="rw-boot">Getting the runway ready.</p>
+  <noscript><p class="rw-boot">RunwayLab needs JavaScript for the camera and pose tracking.</p></noscript>
+</div>
+<script type="module" src="src/main.mjs"></script>
+</body>
+</html>
