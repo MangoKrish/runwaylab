@@ -3,10 +3,7 @@
 
 /* the score number: ink with the house lights up, lit violet with them down */
 :root { --rw-score-ink: var(--ink); --rw-score-glow: none; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) { --rw-score-ink: var(--accent); --rw-score-glow: 0 0 48px var(--glow); }
-}
-:root[data-theme='dark'] { --rw-score-ink: var(--accent); --rw-score-glow: 0 0 48px var(--glow); }
+:root { --rw-score-ink: var(--accent); --rw-score-glow: 0 0 48px var(--glow); }
 
 /* art placeholders keep their room while the drawing loads */
 .rw-artslot { display: block; }
@@ -315,10 +312,7 @@
 .rw-wallcard__foot { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3); margin: 0 var(--s-5); padding: var(--s-3) 0 var(--s-4); border-top: 1px solid var(--hair); }
 .rw-clap .rw-icon { width: 18px; height: 18px; }
 .rw-wall__fine { margin-top: var(--space-block); max-width: var(--measure); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .rw-wallcard--podium { box-shadow: var(--shadow-lit); border-color: transparent; }
-}
-:root[data-theme='dark'] .rw-wallcard--podium { box-shadow: var(--shadow-lit); border-color: transparent; }
+.rw-wallcard--podium { box-shadow: var(--shadow-lit); border-color: transparent; }
 
 /* a wall post */
 .rw-backlink { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); color: var(--ink-2); font-size: var(--t-small); font-weight: 500; text-decoration: none; }

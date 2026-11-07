@@ -2,8 +2,8 @@
 // is simply not drawn; the overlay can never show a point that was not measured.
 import { BONES } from '../lib/landmarks.mjs';
 
-const BONE_COLOUR = '#B3A1FF';
-const JOINT_COLOUR = '#F7F3EC';
+const BONE_COLOUR = '#F2C38B';
+const JOINT_COLOUR = '#F4EDE0';
 
 export function drawSkeleton(ctx, pts, scale, { lineWidth = 3 } = {}) {
   if (!pts) return;
@@ -32,7 +32,7 @@ export function drawSkeleton(ctx, pts, scale, { lineWidth = 3 } = {}) {
 }
 
 const NOT_FRAMED = [0xE8, 0xB3, 0x5A];
-const FRAMED = [0xB3, 0xA1, 0xFF];
+const FRAMED = [0x8F, 0xD1, 0xA8];
 
 /**
  * The framing guides on the live stage: where the head and the feet should sit. Two dashed lines across the

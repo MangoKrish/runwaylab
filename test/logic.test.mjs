@@ -1177,3 +1177,31 @@ test('the camera falls back on any refused format, and phones skip the fps minim
     if (real) Object.defineProperty(globalThis, 'navigator', real);
   }
 });
+
+test('distance and runway marks follow a pinhole camera', async () => {
+  const { runwayMarks, distanceFor, zoneFor, verticalFov, metres } = await import('../src/lib/distance.mjs');
+  assert.equal(verticalFov(1920, 1440), 53);
+  assert.equal(verticalFov(1920, 1080), 44);
+  assert.equal(verticalFov(1080, 1920), 67);
+  // Half the size in the picture means twice as far.
+  const near = distanceFor({ top: 200, bottom: 1200 }, 1920, 1440);
+  const far = distanceFor({ top: 450, bottom: 950 }, 1920, 1440);
+  assert.ok(Math.abs(far / near - 2) < 1e-9);
+  // Without a measurement: the turn mark is about 1.8 m and the start about 5 m for an iPhone held sideways.
+  const plain = runwayMarks(1920, 1440);
+  assert.ok(plain.turn > 1.5 && plain.turn < 2.2, String(plain.turn));
+  assert.ok(plain.start > 4.5 && plain.start < 5.5, String(plain.start));
+  // Standing centred, the measured turn mark matches the plain one.
+  const span = { top: 720 - 225, bottom: 720 + 225 };
+  const centred = runwayMarks(1920, 1440, span);
+  assert.ok(Math.abs(centred.turn - plain.turn) < 0.01);
+  // Feet low in the picture (camera too high): the feet reach the edge first, so the turn mark moves back.
+  const low = runwayMarks(1920, 1440, { top: 720 - 100, bottom: 720 + 350 });
+  assert.ok(low.turn > centred.turn);
+  assert.ok(low.start >= low.turn + 1.5);
+  assert.equal(zoneFor({ ...centred, now: centred.turn - 0.2 }), 'close');
+  assert.equal(zoneFor({ ...centred, now: centred.start + 1 }), 'far');
+  assert.equal(zoneFor({ ...centred, now: (centred.turn + centred.start) / 2 }), 'ok');
+  assert.equal(metres(2.345), '2.3 m');
+  assert.equal(metres(12.3), '12.5 m');
+});

@@ -1,4 +1,4 @@
-/* RunwayLab. The house lights and the stage: one typeface, one accent, and a dark stage in both themes.
+/* RunwayLab. Navy and cream: one typeface, one soft apricot accent, and a deeper navy stage.
    This file holds the tokens, the base, and every shared component. Page rules live in src/css/*.css. */
 
 /* Cascade order: base, then shared components, then the page files (unlayered),
@@ -7,37 +7,37 @@
 
 /* 1. Tokens ------------------------------------------------------------------------------------------------ */
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
-  /* colour: house lights up */
-  --bg: #F4F3F6;
-  --surface: #FFFFFF;
-  --band: #EBE9F0;
-  --ink: #15131C;
-  --ink-2: #4E4A5C;
-  --ink-3: #66627A;          /* only on --bg and --surface, never on --band; min 13 px */
-  --hair: #DDD9E3;
-  --hair-strong: #B9B3C6;
-  --accent: #4E38B5;
-  --accent-hover: #3F2C9C;
-  --on-accent: #FFFFFF;
-  --accent-soft: #E4DFF6;
-  --glow: rgba(120, 96, 255, 0.35);
-  --ok: #1E7A4C;
-  --warn: #8A5300;
-  --err: #B3261E;
-  --err-soft: #FBEAE8;
-  --rec: #E5484D;
+  /* colour: navy and cream, one theme in every setting */
+  --bg: #14213D;
+  --surface: #1A2A4B;
+  --band: #20325A;
+  --ink: #F4EDE0;
+  --ink-2: #D3CBBC;
+  --ink-3: #B0A899;          /* only on --bg and --surface, never on --band; min 13 px */
+  --hair: #2B3D64;
+  --hair-strong: #425683;
+  --accent: #F2C38B;
+  --accent-hover: #F7D5AA;
+  --on-accent: #14213D;
+  --accent-soft: #3A4257;
+  --glow: rgba(242, 195, 139, 0.28);
+  --ok: #8FD1A8;
+  --warn: #F2C38B;
+  --err: #FF9A8F;
+  --err-soft: #3A2532;
+  --rec: #FF6B6B;
   --focus: var(--accent);
 
   /* the stage, in both themes */
-  --stage: #0B0A10;
-  --stage-2: #15111E;
-  --stage-ink: #F3F0FA;
-  --stage-ink-2: rgba(243, 240, 250, 0.78);
-  --stage-hair: rgba(255, 255, 255, 0.10);
-  --stage-accent: #B3A1FF;
-  --stage-scrim: rgba(11, 10, 16, 0.78);
+  --stage: #0F1A31;
+  --stage-2: #14213D;
+  --stage-ink: #F4EDE0;
+  --stage-ink-2: rgba(244, 237, 224, 0.78);
+  --stage-hair: rgba(244, 237, 224, 0.12);
+  --stage-accent: #F2C38B;
+  --stage-scrim: rgba(15, 26, 49, 0.8);
 
   /* data */
   --data-measured: var(--accent);
@@ -46,9 +46,9 @@
   --data-none: repeating-linear-gradient(135deg, var(--hair-strong) 0 1.5px, transparent 1.5px 6px);
 
   /* elevation */
-  --shadow-raised: 0 1px 2px rgba(21, 19, 28, 0.04), 0 8px 24px rgba(21, 19, 28, 0.06);
-  --shadow-float: 0 12px 40px rgba(21, 19, 28, 0.16);
-  --shadow-lit: none;
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(5, 10, 25, 0.3);
+  --shadow-float: 0 12px 40px rgba(5, 10, 25, 0.45);
+  --shadow-lit: 0 0 0 1px var(--accent), 0 0 32px var(--glow);
 
   /* type */
   --font: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -95,46 +95,15 @@
   --stagger: 40ms;
 
   /* the select chevron, one per theme (CSP allows data: images) */
-  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%234E4A5C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9.5 12 15.5 18 9.5'/%3E%3C/svg%3E");
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23D3CBBC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9.5 12 15.5 18 9.5'/%3E%3C/svg%3E");
 
   /* old names, kept so rules written before the redesign still resolve */
   --radius: var(--r-m);
   --radius-small: var(--r-s);
 }
 
-/* house lights down: the same block twice, for the system setting and for an explicit data-theme */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #0E0C14; --surface: #16131E; --band: #1E1A29;
-    --ink: #F3F0FA; --ink-2: #B4AEC4; --ink-3: #8A849C;
-    --hair: #2A2537; --hair-strong: #3E3850;
-    --accent: #B3A1FF; --accent-hover: #CBBEFF; --on-accent: #0E0C14; --accent-soft: #2A2448;
-    --glow: rgba(179, 161, 255, 0.28);
-    --ok: #6FCF9B; --warn: #E8B35A; --err: #FF8A80; --err-soft: #2B1719; --rec: #FF5C5C;
-    --data-tint: rgba(179, 161, 255, 0.18);
-    --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
-    --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
-    --shadow-lit: 0 0 0 1px var(--accent), 0 0 32px var(--glow);
-    --mark-cut: #4E38B5;
-    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23B4AEC4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9.5 12 15.5 18 9.5'/%3E%3C/svg%3E");
-  }
-}
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --bg: #0E0C14; --surface: #16131E; --band: #1E1A29;
-  --ink: #F3F0FA; --ink-2: #B4AEC4; --ink-3: #8A849C;
-  --hair: #2A2537; --hair-strong: #3E3850;
-  --accent: #B3A1FF; --accent-hover: #CBBEFF; --on-accent: #0E0C14; --accent-soft: #2A2448;
-  --glow: rgba(179, 161, 255, 0.28);
-  --ok: #6FCF9B; --warn: #E8B35A; --err: #FF8A80; --err-soft: #2B1719; --rec: #FF5C5C;
-  --data-tint: rgba(179, 161, 255, 0.18);
-  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5);
-  --shadow-lit: 0 0 0 1px var(--accent), 0 0 32px var(--glow);
-  --mark-cut: #4E38B5;
-  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23B4AEC4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9.5 12 15.5 18 9.5'/%3E%3C/svg%3E");
-}
-:root[data-theme='light'] { color-scheme: light; }
+/* One theme: navy (#14213D) with cream text (#F4EDE0), whatever the system setting. */
+:root { --mark-cut: #F2C38B; }
 
 @media (prefers-reduced-motion: reduce) {
   :root { --d-micro: 0ms; --d-short: 0ms; --d-medium: 120ms; --d-long: 150ms; --d-score: 0ms; --stagger: 0ms; }

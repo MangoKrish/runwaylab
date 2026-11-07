@@ -11,6 +11,7 @@ import { makeGrabber } from '../pose/video.mjs';
 import { TargetLock } from '../lib/target.mjs';
 import { classifyPose, framingAdvice, torsoSize } from '../lib/frames.mjs';
 import { LapCounter } from '../lib/phases.mjs';
+import { bodySpan, runwayMarks, zoneFor, metres } from '../lib/distance.mjs';
 import { judgeStatus } from '../judge/client.mjs';
 import { createMusic } from './music.mjs';
 
@@ -40,6 +41,7 @@ export function studioScreen(root, app) {
     meter: new FpsMeter(), lastMs: 0, alive: true, cameraLabel: '', generation: 0, frameHandle: null,
     rotation: Number(recall(SAVED_ROTATION)) || 0, lapsWanted: Number(recall(SAVED_LAPS)) || 3, calibrateUntil: 0, grabber: null, tracking: false, lastTrack: 0, frame: null,
     lastGoodPts: null, turnNow: false, guideMix: 0, lastPaint: 0, setupTouched: false,
+    marks: null, distance: null,
   };
   const OFF_PHASES = ['off', 'asking', 'problem'];
 
@@ -58,13 +60,22 @@ export function studioScreen(root, app) {
     svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
     art.append(svg);
   }).catch(() => { /* The stage works without its picture. */ });
+  // How far away they are, against the start and turn marks, so nobody walks out of the picture.
+  const distYou = h('span', { class: 'rw-distance__you' });
+  const distTurn = h('span', { class: 'rw-distance__mark rw-distance__mark--turn' });
+  const distStart = h('span', { class: 'rw-distance__mark rw-distance__mark--start' });
+  const distBand = h('span', { class: 'rw-distance__band' });
+  const distNow = h('p', { class: 'rw-distance__now' });
+  const distance = h('div', { class: 'rw-distance', hidden: true, 'aria-hidden': 'true' },
+    distNow,
+    h('div', { class: 'rw-distance__track' }, h('span', { class: 'rw-distance__cam' }, icon('camera')), distBand, distTurn, distStart, distYou));
   const stageCta = h('div', { class: 'rw-stage__cta' });
   const stageHint = h('p', { class: 'rw-stage__hint' }, 'Allow the camera in your browser\'s bar above');
   const stage = h('div', { class: 'rw-stage rw-on-stage' },
     video, canvas, art,
     h('span', { class: 'rw-stage__ring', 'aria-hidden': 'true' }),
     h('p', { class: 'rw-stage__tag', 'aria-hidden': 'true' }, 'Live'),
-    timer, count, stageCta, prompt);
+    timer, distance, count, stageCta, prompt);
   const takeSlot = h('div', { class: 'rw-takeslot', hidden: true });
   const announce = liveRegion('rw-sr');
   // Where they are in the whole sequence, so nobody has to guess what happens after "hold still".
@@ -89,12 +100,14 @@ export function studioScreen(root, app) {
   }, { kind: 'small' });
   const uploadInput = h('input', { type: 'file', accept: 'video/mp4,video/webm,video/quicktime,.mp4,.m4v,.mov,.webm', class: 'rw-upload__input', id: 'rw-upload', onChange: onUpload });
   const uploadStatus = h('p', { class: 'rw-status', role: 'status' });
+  const marksText = h('span', null, 'Put a start mark about 5 m from the camera and a turn mark about 2 m from it. Once the camera sees you standing, the stage shows your exact marks and how far away you are.');
+  const marksTip = h('li', null, marksText);
   const setup = h('details', { class: 'rw-card rw-setup', open: true },
     h('summary', { class: 'rw-setup__summary', onClick: () => { s.setupTouched = true; } },
       h('span', { class: 'rw-card__head' }, icon('device'), h('span', { class: 'rw-card__title' }, 'Set up the runway'))),
     h('ol', { class: 'rw-checklist' },
       h('li', null, 'Put your iPhone on a stand, sideways (landscape), at about hip height. Sideways gives the widest view.'),
-      h('li', null, 'Mark your turning spot about 2.5 m from the phone, then check your head and feet both fit when you stand there. Start as far back as you have room for.'),
+      marksTip,
       h('li', null, 'Light the walker from the front. A bright window behind them hides their pose.'),
       h('li', null, 'Turn off Center Stage (Mac menu bar, Video Effects). It moves the picture, which breaks the measurements.'),
       h('li', null, 'Keep everyone else out of the lane.')));
@@ -186,6 +199,7 @@ export function studioScreen(root, app) {
     // The runway checklist is open while the camera is off, and folds away once the picture is live, unless the
     // walker has opened or closed it themselves.
     if (!s.setupTouched) setup.open = OFF_PHASES.includes(phase);
+    showMarks();
     if (phase === 'countdown' && entering) stage.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
     if (phase === 'countdown') renderFlow('still');
     else if (phase === 'stopping' || phase === 'take') renderFlow('done');
@@ -283,6 +297,9 @@ export function studioScreen(root, app) {
     stage.style.setProperty('--ar', String(s.grabber.W / s.grabber.H));
     stage.dataset.shape = s.grabber.H > s.grabber.W ? 'portrait' : 'landscape';
     s.lock.reset();
+    s.marks = runwayMarks(s.grabber.W, s.grabber.H);
+    s.distance = null;
+    showMarks();
   }
 
   // ── camera ──
@@ -465,8 +482,57 @@ export function studioScreen(root, app) {
       .finally(() => { s.tracking = false; });
   }
 
+  /**
+   * Distance from how tall they look, smoothed. While they stand in frame before recording, their marks are
+   * worked out from where their head and feet actually sit, then kept for the walk.
+   */
+  function measureDistance(frame) {
+    const { W, H } = s.grabber;
+    const span = frame.full || s.phase === 'recording' ? bodySpan(frame.pts) : null;
+    if (!span) {
+      s.distance = null;
+      showMarks();
+      return;
+    }
+    const fresh = runwayMarks(W, H, span);
+    s.distance = s.distance === null ? fresh.now : s.distance * 0.8 + fresh.now * 0.2;
+    if (s.phase === 'live') {
+      const k = s.marks?.measured ? 0.1 : 1;
+      s.marks = { turn: s.marks.turn * (1 - k) + fresh.turn * k, start: s.marks.start * (1 - k) + fresh.start * k, measured: true };
+    }
+    showMarks();
+  }
+
+  function showMarks() {
+    const m = s.marks;
+    const visible = !!m && (s.phase === 'live' || s.phase === 'recording');
+    distance.hidden = !visible;
+    if (m) {
+      const tip = `Put a start mark about ${metres(m.start)} from the camera and a turn mark about ${metres(m.turn)} from it.`;
+      marksText.textContent = m.measured ? `${tip} Measured from where you stood, so head and feet stay in the picture.` : `${tip} Once the camera sees you standing, the stage shows your exact marks and how far away you are.`;
+    }
+    if (!visible) return;
+    const max = m.start + 1.5;
+    const at = (d) => `${Math.min(100, Math.max(0, (d / max) * 100)).toFixed(1)}%`;
+    distTurn.style.left = at(m.turn);
+    distStart.style.left = at(m.start);
+    distBand.style.left = at(m.turn);
+    distBand.style.width = `calc(${at(m.start)} - ${at(m.turn)})`;
+    distTurn.textContent = `Turn ${metres(m.turn)}`;
+    distStart.textContent = `Start ${metres(m.start)}`;
+    const zone = zoneFor({ ...m, now: s.distance });
+    distance.dataset.zone = zone ?? 'none';
+    distYou.hidden = s.distance === null;
+    if (s.distance !== null) distYou.style.left = at(s.distance);
+    distNow.textContent = s.distance === null ? 'Stand in frame to see your distance'
+      : zone === 'close' ? `${metres(s.distance)} away: too close, turn here`
+      : zone === 'far' ? `${metres(s.distance)} away: start a little closer`
+      : `About ${metres(s.distance)} away`;
+  }
+
   function react(frame, t, H) {
     const advice = framingAdvice(frame.pts, H);
+    measureDistance(frame);
     if (s.phase === 'live') {
       if (!frame.pts) {
         setPrompt('Stand on your start mark');

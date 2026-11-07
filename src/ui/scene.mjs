@@ -48,21 +48,21 @@ function paintStage(view) {
   const ctx = canvas.getContext('2d');
 
   const sky = ctx.createLinearGradient(0, 0, 0, hy);
-  sky.addColorStop(0, '#08070B');
-  sky.addColorStop(1, '#1A1524');
+  sky.addColorStop(0, '#0B1428');
+  sky.addColorStop(1, '#1B2C50');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, hy + 1);
   const floor = ctx.createLinearGradient(0, hy, 0, H);
-  floor.addColorStop(0, '#15111E');
-  floor.addColorStop(1, '#09080C');
+  floor.addColorStop(0, '#16264A');
+  floor.addColorStop(1, '#0B1428');
   ctx.fillStyle = floor;
   ctx.fillRect(0, hy, W, H - hy);
 
   // A wash of light on the end wall, behind where the walker comes from.
   const wash = ctx.createRadialGradient(vx, hy - H * 0.04, 0, vx, hy - H * 0.04, Math.max(W, H) * 0.55);
-  wash.addColorStop(0, 'rgba(150, 125, 255, 0.34)');
-  wash.addColorStop(0.35, 'rgba(110, 88, 220, 0.12)');
-  wash.addColorStop(1, 'rgba(90, 70, 200, 0)');
+  wash.addColorStop(0, 'rgba(242, 195, 139, 0.34)');
+  wash.addColorStop(0.35, 'rgba(214, 160, 104, 0.12)');
+  wash.addColorStop(1, 'rgba(214, 160, 104, 0)');
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, W, H);
 
@@ -74,7 +74,7 @@ function paintStage(view) {
     const inner = side * (RUNWAY_HALF_WIDTH + 0.55);
     const outer = side * 9;
     const shoulderHeight = 1.02;
-    ctx.fillStyle = '#07060A';
+    ctx.fillStyle = '#09111F';
     ctx.beginPath();
     // The rows of seats rise as they go back, at the same slope as the rows of heads below.
     const backHeight = shoulderHeight + Math.abs(outer - inner) * (0.22 / 0.62);
@@ -91,7 +91,7 @@ function paintStage(view) {
       for (let d = END_WALL - 0.2; d > 3; d -= 0.5) {
         if (random() < 0.12) continue;
         const [px, py] = project(view, x + (random() - 0.5) * 0.16, shoulderHeight + row * 0.22 + 0.12 + random() * 0.05, d);
-        ctx.fillStyle = '#07060A';
+        ctx.fillStyle = '#09111F';
         ctx.beginPath();
         ctx.arc(px, py, (f / d) * 0.1, 0, Math.PI * 2);
         ctx.fill();
@@ -103,11 +103,11 @@ function paintStage(view) {
   const [doorLeft, doorTop] = project(view, -RUNWAY_HALF_WIDTH * 0.95, 3.1, END_WALL);
   const [doorRight, doorBottom] = project(view, RUNWAY_HALF_WIDTH * 0.95, 0, END_WALL);
   ctx.save();
-  ctx.shadowColor = 'rgba(190, 170, 255, 0.95)';
+  ctx.shadowColor = 'rgba(242, 195, 139, 0.95)';
   ctx.shadowBlur = H * 0.09;
   const door = ctx.createLinearGradient(0, doorTop, 0, doorBottom);
-  door.addColorStop(0, '#CFC3FF');
-  door.addColorStop(0.7, '#F4F0FF');
+  door.addColorStop(0, '#F2C38B');
+  door.addColorStop(0.7, '#FBEBD3');
   door.addColorStop(1, '#FFFFFF');
   ctx.fillStyle = door;
   ctx.fillRect(doorLeft, doorTop, doorRight - doorLeft, doorBottom - doorTop);
@@ -120,10 +120,10 @@ function paintStage(view) {
   const [farLeft, farY] = project(view, -RUNWAY_HALF_WIDTH, 0, END_WALL);
   const [farRight] = project(view, RUNWAY_HALF_WIDTH, 0, END_WALL);
   const deck = ctx.createLinearGradient(0, farY, 0, Math.min(nearY, H));
-  deck.addColorStop(0, '#7F6FC6');
-  deck.addColorStop(0.09, '#40365F');
-  deck.addColorStop(0.4, '#221D30');
-  deck.addColorStop(1, '#14111B');
+  deck.addColorStop(0, '#C9A27A');
+  deck.addColorStop(0.09, '#4A4F63');
+  deck.addColorStop(0.4, '#1E2D4E');
+  deck.addColorStop(1, '#111D36');
   ctx.fillStyle = deck;
   ctx.beginPath();
   ctx.moveTo(farLeft, farY);
@@ -138,9 +138,9 @@ function paintStage(view) {
   // The doorway's reflection, running down the polished floor toward us.
   ctx.globalCompositeOperation = 'lighter';
   const sheen = ctx.createLinearGradient(0, farY, 0, H);
-  sheen.addColorStop(0, 'rgba(220, 208, 255, 0.55)');
-  sheen.addColorStop(0.5, 'rgba(150, 128, 255, 0.1)');
-  sheen.addColorStop(1, 'rgba(150, 128, 255, 0)');
+  sheen.addColorStop(0, 'rgba(251, 232, 204, 0.55)');
+  sheen.addColorStop(0.5, 'rgba(242, 195, 139, 0.1)');
+  sheen.addColorStop(1, 'rgba(242, 195, 139, 0)');
   ctx.fillStyle = sheen;
   ctx.beginPath();
   ctx.moveTo(doorLeft, farY);
@@ -158,8 +158,8 @@ function paintStage(view) {
     ctx.translate(px, py);
     ctx.scale(1, Math.max(0.05, (f * CAMERA_HEIGHT) / d / d / scale) * 1.4);
     const pool = ctx.createRadialGradient(0, 0, 0, 0, 0, scale * 1.15);
-    pool.addColorStop(0, 'rgba(205, 192, 255, 0.2)');
-    pool.addColorStop(1, 'rgba(205, 192, 255, 0)');
+    pool.addColorStop(0, 'rgba(251, 232, 204, 0.2)');
+    pool.addColorStop(1, 'rgba(251, 232, 204, 0)');
     ctx.fillStyle = pool;
     ctx.beginPath();
     ctx.arc(0, 0, scale * 1.15, 0, Math.PI * 2);
@@ -171,7 +171,7 @@ function paintStage(view) {
   // The line to walk, down the middle.
   ctx.save();
   ctx.setLineDash([]);
-  ctx.strokeStyle = 'rgba(214, 205, 255, 0.34)';
+  ctx.strokeStyle = 'rgba(251, 232, 204, 0.34)';
   for (let d = END_WALL; d > nearest + 0.5; d -= 0.9) {
     const [x0, y0] = project(view, 0, 0, d);
     const [x1, y1] = project(view, 0, 0, Math.max(nearest, d - 0.42));
@@ -190,8 +190,8 @@ function paintStage(view) {
     const [x0, y0] = project(view, side * RUNWAY_HALF_WIDTH, 0, END_WALL);
     const [x1, y1] = project(view, side * RUNWAY_HALF_WIDTH, 0, nearest);
     const edge = ctx.createLinearGradient(x0, y0, x1, y1);
-    edge.addColorStop(0, 'rgba(235, 228, 255, 0.85)');
-    edge.addColorStop(1, 'rgba(180, 160, 255, 0.18)');
+    edge.addColorStop(0, 'rgba(251, 232, 204, 0.85)');
+    edge.addColorStop(1, 'rgba(242, 195, 139, 0.18)');
     ctx.strokeStyle = edge;
     ctx.lineWidth = Math.max(1, H * 0.0016);
     ctx.beginPath();
@@ -203,8 +203,8 @@ function paintStage(view) {
       const r = Math.min(H * 0.0045, Math.max(1, (f / d) * 0.02));
       const glow = ctx.createRadialGradient(px, py, 0, px, py, r * 5);
       glow.addColorStop(0, 'rgba(255, 250, 240, 0.95)');
-      glow.addColorStop(0.25, 'rgba(226, 214, 255, 0.4)');
-      glow.addColorStop(1, 'rgba(180, 160, 255, 0)');
+      glow.addColorStop(0.25, 'rgba(251, 232, 204, 0.4)');
+      glow.addColorStop(1, 'rgba(242, 195, 139, 0)');
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(px, py, r * 5, 0, Math.PI * 2);
@@ -220,8 +220,8 @@ function paintStage(view) {
     const [fx0, fy] = project(view, -1.05, 0, d);
     const [fx1] = project(view, 1.05, 0, d);
     const beam = ctx.createLinearGradient(0, y0, 0, fy);
-    beam.addColorStop(0, 'rgba(205, 192, 255, 0.075)');
-    beam.addColorStop(1, 'rgba(205, 192, 255, 0)');
+    beam.addColorStop(0, 'rgba(251, 232, 204, 0.075)');
+    beam.addColorStop(1, 'rgba(251, 232, 204, 0)');
     ctx.fillStyle = beam;
     ctx.beginPath();
     ctx.moveTo(x0, y0);
@@ -233,7 +233,7 @@ function paintStage(view) {
     ctx.strokeStyle = 'rgba(255, 252, 245, 0.92)';
     ctx.lineCap = 'round';
     ctx.lineWidth = Math.max(1.2, (f / d) * 0.022);
-    ctx.shadowColor = 'rgba(214, 200, 255, 0.9)';
+    ctx.shadowColor = 'rgba(251, 232, 204, 0.9)';
     ctx.shadowBlur = H * 0.018;
     ctx.beginPath();
     ctx.moveTo(x0, y0);
@@ -287,8 +287,8 @@ function paintFigure(ctx, view, pose, depthOf, mirror = false) {
 
   // A deep violet body, so the figure stands in front of the lights rather than floating on them.
   const body = ctx.createLinearGradient(0, top.y, 0, Math.max(lh.y, rh.y) + (lh.scale * 0.9));
-  body.addColorStop(0, '#332A63');
-  body.addColorStop(1, '#1D1838');
+  body.addColorStop(0, '#2C3D66');
+  body.addColorStop(1, '#16233F');
   ctx.fillStyle = body;
   ctx.strokeStyle = body;
   for (const [a, b, r] of limbs) line(a, b, a.scale * r * 2);
@@ -302,19 +302,19 @@ function paintFigure(ctx, view, pose, depthOf, mirror = false) {
 
   // A thin edge of light around the head, the one part with no bones to show it.
   ctx.globalCompositeOperation = 'lighter';
-  ctx.strokeStyle = 'rgba(190, 172, 255, 0.55)';
+  ctx.strokeStyle = 'rgba(242, 195, 139, 0.55)';
   ctx.lineWidth = Math.max(1, ls.scale * 0.007);
   headShape();
   ctx.stroke();
 
   // The skeleton: the same bones the tracker draws on a real walk.
   const bright = Math.max(0.9, ls.scale * 0.0095);
-  ctx.strokeStyle = 'rgba(160, 138, 255, 0.42)';
+  ctx.strokeStyle = 'rgba(242, 195, 139, 0.42)';
   for (const [a, b] of BONES) {
     const [from, to] = [at(a), at(b)];
     if (from && to) line(from, to, bright * 3.4);
   }
-  ctx.strokeStyle = '#E9E3FF';
+  ctx.strokeStyle = '#F4EDE0';
   for (const [a, b] of BONES) {
     const [from, to] = [at(a), at(b)];
     if (from && to) line(from, to, bright);
@@ -357,7 +357,7 @@ function paintCallouts(ctx, view, pose, depthOf, callouts, strength) {
   for (const callout of callouts) {
     const [x, y] = anchors[callout.at]();
     const left = Math.max(labelX, x + size * 2);
-    ctx.strokeStyle = 'rgba(214, 204, 255, 0.55)';
+    ctx.strokeStyle = 'rgba(251, 232, 204, 0.55)';
     ctx.lineWidth = view.dpr;
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -368,10 +368,10 @@ function paintCallouts(ctx, view, pose, depthOf, callouts, strength) {
     ctx.arc(x, y, 3 * view.dpr, 0, Math.PI * 2);
     ctx.fill();
     ctx.font = `600 ${size}px "Be Vietnam Pro", system-ui, sans-serif`;
-    ctx.fillStyle = '#F7F3EC';
+    ctx.fillStyle = '#F4EDE0';
     ctx.fillText(callout.value, left, y - size * 0.62);
     ctx.font = `400 ${size * 0.86}px "Be Vietnam Pro", system-ui, sans-serif`;
-    ctx.fillStyle = 'rgba(232, 226, 255, 0.78)';
+    ctx.fillStyle = 'rgba(251, 232, 204, 0.78)';
     ctx.fillText(callout.label, left, y + size * 0.62);
   }
   ctx.restore();
@@ -391,7 +391,7 @@ function paintLeaders(ctx, view, pose, depthOf, callouts, readout, strength) {
   ctx.globalAlpha = strength;
   ctx.lineWidth = dpr;
   ctx.lineJoin = 'round';
-  ctx.strokeStyle = 'rgba(243, 240, 250, 0.35)';
+  ctx.strokeStyle = 'rgba(251, 232, 204, 0.35)';
   ctx.fillStyle = '#FFFFFF';
   for (const callout of callouts) {
     const ty = readout.ys?.[callout.at];

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="rl-hero" viewBox="0 0 960 720" role="img" aria-labelledby="rl-hero-t rl-hero-d" fill="none" stroke-linecap="round" stroke-linejoin="round">
 <title id="rl-hero-t">A figure walks down a lit runway toward you</title>
 <desc id="rl-hero-d">A made-up figure drawn from the points the tracker follows, on a runway that narrows to a lit doorway. Not a real person.</desc>
-<style>svg:root{color:#1F1D1B;--accent:#5B3FC4}@media(prefers-color-scheme:dark){svg:root{color:#F5F0E8;--accent:#B3A1FF}}</style>
+<style>svg:root{color:#F4EDE0;--accent:#F2C38B}</style>
 <defs style="color:var(--accent)">
 <radialGradient id="rl-hero-wash" cx="480" cy="330" r="430" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".24"/><stop offset=".55" stop-color="currentColor" stop-opacity=".06"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
 <radialGradient id="rl-hero-glow" cx="480" cy="372" r="160" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".6"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>

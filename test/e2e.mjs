@@ -107,7 +107,7 @@ const fakeAuth0 = http.createServer((req, res) => {
 });
 
 // ── a minimal Chrome DevTools client ──
-const VIOLET_PIXELS = `(() => { const c = document.querySelector('.rw-player__canvas'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (Math.abs(d[i] - 179) < 14 && Math.abs(d[i + 1] - 161) < 14 && Math.abs(d[i + 2] - 255) < 14) n++; return n; })()`;
+const BONE_PIXELS = `(() => { const c = document.querySelector('.rw-player__canvas'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (Math.abs(d[i] - 242) < 14 && Math.abs(d[i + 1] - 195) < 14 && Math.abs(d[i + 2] - 139) < 14) n++; return n; })()`;
 
 class Tab {
   constructor(ws) {
@@ -285,10 +285,10 @@ async function main() {
     await sleep(120);
     const seeked = await tab.js('document.querySelector("#rw-root input[type=range]").value');
     check('a moment seeks playback', Math.abs(Number(seeked) - 4.6) < 0.05, seeked);
-    const skeletonOn = await tab.js(VIOLET_PIXELS);
+    const skeletonOn = await tab.js(BONE_PIXELS);
     await tab.js(`document.querySelector('.rw-check--plain input').click()`);
     await sleep(120);
-    const skeletonOff = await tab.js(VIOLET_PIXELS);
+    const skeletonOff = await tab.js(BONE_PIXELS);
     check('skeleton toggle works', skeletonOn > 50 && skeletonOff === 0, `${skeletonOn} then ${skeletonOff}`);
     await tab.js(`document.querySelector('.rw-check--plain input').click()`);
     check('no stray "null" or "undefined"', !/\b(null|undefined)\b/.test(await tab.text()));
@@ -345,7 +345,7 @@ async function main() {
     check('the walk was found', await tab.js(`document.querySelectorAll('.rw-ribbon__seg').length === 3`));
     await tab.js(`(async () => { const v = document.querySelector('.rw-player__video'); v.currentTime = 2.5; await new Promise((r) => v.addEventListener('seeked', r, { once: true })); })()`);
     await sleep(300);
-    check('overlay draws real landmarks on the video', (await tab.js(VIOLET_PIXELS)) > 50);
+    check('overlay draws real landmarks on the video', (await tab.js(BONE_PIXELS)) > 50);
     check('the criteria explain themselves', (await tab.js(`document.querySelectorAll('.rw-breakdown .rw-bar').length`)) === 7 && (await tab.js(`document.querySelectorAll('.rw-why').length`)) === 7);
     check('no stray "null" or "undefined"', !/\b(null|undefined)\b/.test(await tab.text()));
     await tab.shot('analyzed');
@@ -426,7 +426,7 @@ async function main() {
     await tab.js(`(() => { const v = document.querySelector('.rw-player__video'); v.currentTime = 2.5; })()`);
     await sleep(400);
     await tab.shot('rotated');
-    check('tracking works once upright', (await tab.js(VIOLET_PIXELS)) > 50);
+    check('tracking works once upright', (await tab.js(BONE_PIXELS)) > 50);
 
     // ── the wall ──
     section(`The wall, on ${usingDb ? 'a real database' : 'the local test store'}`);
@@ -483,7 +483,7 @@ async function main() {
     await tab.js(`document.querySelector('.rw-wallcard__link').click()`);
     check('replay page opens', await tab.until(tab.hasText('Skeleton replay. No video is stored'), 'replay', 10000));
     check('no video element on the replay page', await tab.js(`!document.querySelector('video')`));
-    check('replay draws the skeleton', await tab.until(`${VIOLET_PIXELS} > 50`, 'skeleton on canvas', 5000));
+    check('replay draws the skeleton', await tab.until(`${BONE_PIXELS} > 50`, 'skeleton on canvas', 5000));
     const wallUrl = await tab.js('location.hash');
     await tab.clickButton('Clap · 0');
     check('a clap counts', await tab.until(tab.hasText('Clapped · 1'), 'clap', 5000));

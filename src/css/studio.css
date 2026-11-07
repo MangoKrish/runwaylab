@@ -158,7 +158,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--stage-ink);
   text-shadow: 0 6px 48px rgba(0, 0, 0, 0.55);
-  background: radial-gradient(closest-side at 50% 50%, rgba(179, 161, 255, 0.28), rgba(179, 161, 255, 0.08) 55%, transparent 80%) center / min(70cqw, 44rem) min(70cqw, 44rem) no-repeat;
+  background: radial-gradient(closest-side at 50% 50%, rgba(242, 195, 139, 0.28), rgba(242, 195, 139, 0.08) 55%, transparent 80%) center / min(70cqw, 44rem) min(70cqw, 44rem) no-repeat;
   pointer-events: none;
 }
 .rw-stage__count[hidden] { display: none; }
@@ -203,7 +203,7 @@
   transition: background-color var(--d-short) var(--ease-out), color var(--d-short) var(--ease-out);
 }
 .rw-stage__prompt.is-swapping { animation: rw-fade var(--d-short) var(--ease-in-out); }
-.rw-stage[data-urgent='true'] .rw-stage__prompt { background: color-mix(in srgb, #B3A1FF 92%, transparent); color: var(--stage); border-top-color: transparent; }
+.rw-stage[data-urgent='true'] .rw-stage__prompt { background: color-mix(in srgb, #F2C38B 92%, transparent); color: var(--stage); border-top-color: transparent; }
 /* fit the big line to the stage, not the window, so a narrow stage never wraps to four lines */
 @container (max-width: 640px) {
   .rw-stage__prompt { font-size: clamp(1.375rem, 6.4cqw, 2.25rem); padding: 14px 18px; }
@@ -468,4 +468,45 @@
   .rw-stage__count.is-tick { animation: none; }
   .rw-flow::after { transition: none; }
   .rw-stage__prompt.is-swapping { animation: none; }
+}
+
+/* distance: how far away the walker is, against the start and turn marks */
+.rw-distance {
+  position: absolute;
+  top: clamp(14px, 2.4cqw, 24px);
+  right: clamp(14px, 2.4cqw, 24px);
+  z-index: 4;
+  width: min(46%, 320px);
+  margin: 0;
+  padding: 10px 14px 12px;
+  border: 1px solid var(--stage-hair);
+  border-radius: var(--r-m);
+  background: var(--stage-scrim);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--stage-ink);
+}
+.rw-distance[hidden] { display: none; }
+.rw-stage[data-phase='recording'] .rw-distance { top: calc(clamp(14px, 2.4cqw, 24px) + 52px); }
+.rw-distance__now { margin: 0 0 30px; font-size: var(--t-small); font-weight: 600; font-variant-numeric: tabular-nums; }
+.rw-distance[data-zone='close'] .rw-distance__now,
+.rw-distance[data-zone='far'] .rw-distance__now { color: var(--warn-stage, #F2C38B); }
+.rw-distance__track { position: relative; height: 4px; margin: 0 4px 22px 22px; border-radius: 2px; background: var(--stage-hair); }
+.rw-distance__cam { position: absolute; left: -24px; top: 50%; transform: translateY(-50%); display: inline-flex; color: var(--stage-ink-2); }
+.rw-distance__cam svg { width: 16px; height: 16px; }
+.rw-distance__band { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: var(--stage-accent); opacity: 0.55; transition: left var(--d-short) var(--ease-out), width var(--d-short) var(--ease-out); }
+.rw-distance__mark { position: absolute; top: 10px; transform: translateX(-50%); font-size: 0.75rem; white-space: nowrap; color: var(--stage-ink-2); font-variant-numeric: tabular-nums; transition: left var(--d-short) var(--ease-out); }
+.rw-distance__mark::before { content: ''; position: absolute; left: 50%; top: -12px; width: 2px; height: 10px; margin-left: -1px; background: var(--stage-ink); border-radius: 1px; }
+.rw-distance__mark--turn { transform: translateX(-30%); }
+.rw-distance__mark--start { transform: translateX(-70%); }
+.rw-distance__you { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--stage-ink); box-shadow: 0 0 0 3px var(--stage-scrim); transition: left 160ms linear; }
+.rw-distance__you::after { content: 'You'; position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); font-size: 0.6875rem; font-weight: 600; color: var(--stage-ink); }
+.rw-distance__you[hidden] { display: none; }
+@container (max-width: 640px) {
+  .rw-distance { width: auto; left: 12px; right: 12px; top: 52px; padding: 8px 12px 10px; }
+  .rw-stage[data-phase='recording'] .rw-distance { top: 56px; }
+  .rw-distance__now { margin-bottom: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rw-distance__band, .rw-distance__mark, .rw-distance__you { transition: none; }
 }

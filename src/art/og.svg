@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="rl-og" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-labelledby="rl-og-t" style="color:#F5F0E8;--accent:#B3A1FF" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="rl-og" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-labelledby="rl-og-t" style="color:#F4EDE0;--accent:#F2C38B" fill="none" stroke-linecap="round" stroke-linejoin="round">
 <title id="rl-og-t">RunwayLab. Walk up. Turn. Get judged.</title>
 <defs style="color:var(--accent)">
-<linearGradient id="rl-og-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#15121D"/><stop offset="1" stop-color="#0B0A0E"/></linearGradient>
+<linearGradient id="rl-og-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14213D"/><stop offset="1" stop-color="#0F1A31"/></linearGradient>
 <radialGradient id="rl-og-wash" cx="976" cy="300" r="420" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".3"/><stop offset=".55" stop-color="currentColor" stop-opacity=".07"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
 <radialGradient id="rl-og-glow" cx="976" cy="316" r="150" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".65"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
 <linearGradient id="rl-og-beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".3"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient>
@@ -42,6 +42,6 @@
 <text x="80" y="206" font-size="26" font-weight="600" style="fill:var(--accent)">The AI runway judge</text>
 <text x="76" y="318" font-size="116" font-weight="700" letter-spacing="-5">RunwayLab</text>
 <text x="80" y="392" font-size="42" font-weight="600" letter-spacing="-1">Walk up. Turn. <tspan style="fill:var(--accent)">Get judged.</tspan></text>
-<text x="80" y="560" font-size="23" font-weight="400" fill="#B3ACA1">Measured on your device. Judged by Gemini.</text>
+<text x="80" y="560" font-size="23" font-weight="400" fill="#B0A899">Measured on your device. Judged by Gemini.</text>
 </g>
 </svg>

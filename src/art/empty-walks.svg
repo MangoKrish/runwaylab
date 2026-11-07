@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" id="rl-empty" viewBox="0 0 320 200" role="img" aria-labelledby="rl-empty-t" fill="none" stroke-linecap="round" stroke-linejoin="round">
 <title id="rl-empty-t">An empty runway with the lights on, waiting for a walk</title>
-<style>svg:root{color:#1F1D1B;--accent:#5B3FC4}@media(prefers-color-scheme:dark){svg:root{color:#F5F0E8;--accent:#B3A1FF}}</style>
+<style>svg:root{color:#F4EDE0;--accent:#F2C38B}</style>
 <defs style="color:var(--accent)">
 <radialGradient id="rl-empty-wash" cx="160" cy="80" r="150" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".2"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
 <radialGradient id="rl-empty-pool" cx="160" cy="98" r="26" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".45"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>

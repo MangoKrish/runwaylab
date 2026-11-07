@@ -6,9 +6,9 @@ import { drawSkeleton } from './overlay.mjs';
 import { poseAt } from '../lib/process.mjs';
 
 // The stage colours from the design tokens. The canvas cannot read CSS variables cheaply every frame.
-const STAGE = '#0B0A10';
-const FLOOR_FAR = '#1A1524';
-const FLOOR_NEAR = '#272036';
+const STAGE = '#0F1A31';
+const FLOOR_FAR = '#1B2C50';
+const FLOOR_NEAR = '#24365E';
 const MAX_CANVAS = 1600;
 
 /**
@@ -89,8 +89,8 @@ export function createPlayer({ blob = null, analysis = null, rotation = 0, badge
       // A vanishing runway, so a change in size reads as walking toward you, with a pool of light at the far end.
       const horizon = height * 0.42;
       const pool = ctx.createRadialGradient(width / 2, horizon, 0, width / 2, horizon, width * 0.5);
-      pool.addColorStop(0, 'rgba(120, 100, 200, 0.16)');
-      pool.addColorStop(1, 'rgba(120, 100, 200, 0)');
+      pool.addColorStop(0, 'rgba(214, 160, 104, 0.16)');
+      pool.addColorStop(1, 'rgba(214, 160, 104, 0)');
       ctx.fillStyle = pool;
       ctx.fillRect(0, 0, width, height);
       const floor = ctx.createLinearGradient(0, horizon, 0, height);
@@ -104,7 +104,7 @@ export function createPlayer({ blob = null, analysis = null, rotation = 0, badge
       ctx.lineTo(width * 0.08, height);
       ctx.fill();
       // Edge lines and a dashed centre line, faint, the way the runway is drawn everywhere else.
-      ctx.strokeStyle = 'rgba(243, 240, 250, 0.10)';
+      ctx.strokeStyle = 'rgba(251, 232, 204, 0.10)';
       ctx.lineWidth = Math.max(1, width / 800);
       ctx.beginPath();
       ctx.moveTo(width * 0.46, horizon);
