@@ -31,6 +31,8 @@ function explain(err) {
  * "ideal", a camera that cannot do both picks resolution and drops to 24 or 30, so the minimum is what makes it count.
  */
 export const SMOOTH_VIDEO = { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { min: 50, ideal: 60 } };
+/** Second choice: the same speed at 720p, for browsers that only offer 60 fps at smaller sizes. */
+export const SMOOTH_SMALL_VIDEO = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { min: 50, ideal: 60 } };
 /** Fallback for cameras with no 50 fps mode. These are preferences, so a lesser camera still works. */
 export const BEST_VIDEO = { width: { ideal: 1920 }, height: { ideal: 1440 }, frameRate: { ideal: 60 } };
 
@@ -41,7 +43,7 @@ export async function openCamera(deviceId) {
   const ask = (format) => navigator.mediaDevices.getUserMedia({ audio: false, video: { ...(deviceId ? { deviceId: { exact: deviceId } } : {}), ...format } });
   // Fastest first, then the best picture, then whatever the camera gives. Phones and Safari often refuse the
   // 50 fps minimum, and do not always say which constraint failed, so any refused format moves on to the next.
-  const formats = isPhone() ? [BEST_VIDEO, {}] : [SMOOTH_VIDEO, BEST_VIDEO, {}];
+  const formats = isPhone() ? [BEST_VIDEO, {}] : [SMOOTH_VIDEO, SMOOTH_SMALL_VIDEO, BEST_VIDEO, {}];
   let last = null;
   for (const [i, format] of formats.entries()) {
     try {

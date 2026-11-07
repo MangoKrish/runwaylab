@@ -542,7 +542,7 @@ async function main() {
     const asked = await tab.js('window.__asked[0].video');
     check('music is offered, with a credit and your own option', await tab.js(`document.querySelectorAll('#rw-music option').length >= 4`) && (await tab.text()).includes('Kevin MacLeod') && (await tab.js(`fetch('vendor/music/aitech.mp3', { method: 'HEAD' }).then((r) => r.ok)`)));
     check('asks for 50+ fps first', asked.frameRate.min === 50 && asked.frameRate.ideal === 60 && asked.height.ideal === 1080);
-    const fallback = await tab.js('window.__asked[1]?.video ?? null');
+    const fallback = await tab.js('window.__asked.map((a) => a.video).find((v) => v.height?.ideal === 1440) ?? null');
     check('a 30 fps camera falls back to the best picture', !!fallback && fallback.height.ideal === 1440 && fallback.frameRate.min === undefined);
     check('shows device fps and measured fps apart', await tab.until(`/Camera reports[\\s\\S]*fps/.test(document.querySelector('.rw-fps').innerText) && /Measured here\\s*[\\d.]+ fps/.test(document.querySelector('.rw-fps').innerText)`, 'fps values', 10000), (await tab.js(`document.querySelector('.rw-fps').innerText.replace(/\\n/g, ' ')`)));
     check('tracking starts on live video', await tab.until(`/Tracking with/.test(document.querySelector('#rw-root').innerText)`, 'tracker loaded', 60000), (await tab.fullText()).match(/Tracking with [^.]+/)?.[0]);

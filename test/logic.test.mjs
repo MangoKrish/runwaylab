@@ -1166,7 +1166,7 @@ test('the camera falls back on any refused format, and phones skip the fps minim
     // Safari on a Mac: refuses the minimum without naming it.
     let asked = fake('Mozilla/5.0 (Macintosh) Safari', (v) => v.frameRate?.min);
     assert.deepEqual(await openCamera(), { ok: true });
-    assert.equal(asked.length, 2);
+    assert.equal(asked.length, 3, 'tries 1080p60, then 720p60, then the best picture');
     // An iPhone never gets the minimum, and a camera refusing every preference still opens with none.
     asked = fake('Mozilla/5.0 (iPhone) Safari', (v) => Object.keys(v).length > 0);
     assert.deepEqual(await openCamera(), { ok: true });
