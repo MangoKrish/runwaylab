@@ -71,7 +71,7 @@ const step = (n, glyph, title, text) => h('li', { class: 'rw-step' },
 const FOOTAGE_ROWS = [
   { key: 'shoulderSway', label: 'Shoulder rock', unit: '°', max: 8, other: 'stock', otherName: 'stock clips' },
   { key: 'headMovement', label: 'Head movement', unit: '% of height', max: 7, other: 'stock', otherName: 'stock clips' },
-  { key: 'footLine', label: 'Foot placement', unit: '% of height', max: 9, other: 'published', otherName: 'published everyday walking' },
+  { key: 'footLine', label: 'Foot placement', unit: '% of height', max: 12, other: 'published', otherName: 'published everyday walking' },
 ];
 
 /** A dot for each group on the scale the points are given on, which is shaded where marks are earned. */

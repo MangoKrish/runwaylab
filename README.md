@@ -68,14 +68,14 @@ No published study sets targets for a runway walk, so the rules are ours and thi
 | Value | Source | What it changed |
 |---|---|---|
 | 10 model applicants averaging 177.2 cm: step width 1.54 cm. 10 other women averaging 172.3 cm: 8.12 cm. That is 0.9% and 4.7% of height. Walking speed did not differ significantly (1.50 against 1.39 m/s). The authors link this walk to possible injury risk. | [Moon and Choi 2025](https://doi.org/10.5103/KJAB.2025.35.3.157) | Foot placement is worth the most |
-| Preferred step width 0.13 leg lengths, 10 adults, leg length 0.93 m. About 6.9% of height, taking leg length as 53% of height. | [Donelan, Kram and Kuo 2001](https://doi.org/10.1098/rspb.2001.1761) | No foot marks from 7% |
+| Preferred step width 0.13 leg lengths, 10 adults, leg length 0.93 m. About 6.9% of height, taking leg length as 53% of height. | [Donelan, Kram and Kuo 2001](https://doi.org/10.1098/rspb.2001.1761) | Foot marks run out at 10%, past ordinary walking |
 | One iPad 4.2 m in front of the walker against motion capture: step width 9.6 against 10.6 cm, limits of agreement +1.3 to −3.3 cm | [Ksoll and others 2025](https://doi.org/10.3390/s25216551) | Full foot marks start at 2.5%, since smaller differences are within the error |
 | Trunk obliquity range in 20 adults walking barefoot: 3.3 ± 1.4° (women 3.1°) | [Chung and others 2010](https://pmc.ncbi.nlm.nih.gov/articles/PMC2843703/) | Trunk sway counts for little |
 | Vertical movement of the centre of mass in 10 adults: 2.74 cm at 0.7 m/s, 3.61 at 1.0, 4.06 at 1.2, 4.89 cm at a self-chosen 1.61 m/s | [Orendurff and others 2004](https://doi.org/10.1682/JRRD.2003.10.0150) | Only exaggerated bounce costs points |
 | Stride time variation in 29 young adults: 2.2 ± 0.7% at their own speed, rising to 3 to 5% when slower | [Beauchet and others 2009](https://pmc.ncbi.nlm.nih.gov/articles/PMC2731039) | Rhythm keeps full marks up to 5% |
 | 7 professional models and 10 other women on a treadmill at 1.0 m/s, pooled. Attractiveness ratings correlated with backward arm swing (r = .66 to .72), a head tilted down (r = .65 to .68) and, in heels, a steadier head (r = −.44) | [Tanabe and Yamamoto 2023](https://doi.org/10.1038/s41598-023-45130-2) | Only looking at the floor costs points. Head steadiness stays. |
 
-The foot scale gives full marks at 2.5% of height and none at 7%. Ordinary walkers at 4.7% earn about 10 of the 20 points.
+The foot scale gives full marks at 2.5% of height and none at 10%. Ordinary walkers at 4.7% earn about 14 of the 20 points, and the relaxed walkers filmed so far (7 to 9.6%) earn 1 to 8 rather than nothing. It was 7% until 7 November 2026, which gave every ordinary walker 0.
 
 ### Showreel edits
 

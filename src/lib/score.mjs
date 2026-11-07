@@ -45,7 +45,9 @@ export function ramp(x, best, worst) {
 }
 
 export const RULES = {
-  footLine: { best: 2.5, worst: 7 },
+  // Nothing only from 10%: everyday walking lands about 5 to 9% (measured here: 7 to 9.6%), so ordinary walkers still
+  // earn some of the 20 points, and the narrow line of a runway walk still earns the most.
+  footLine: { best: 2.5, worst: 10 },
   stepRhythm: { best: 0.05, worst: 0.2 },
   pace: { best: 0.12, worst: 0.5 },
   shoulderSway: { best: 2, worst: 6 },

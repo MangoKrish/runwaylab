@@ -623,7 +623,8 @@ test('scoring separates walks: catwalk is far above casual, and casual above slo
 test('a casual walk does not get a high score', () => {
   for (const seed of [1, 22, 333, 4444]) {
     const { points } = scoreOf('casual', seed).measured;
-    assert.ok(points <= 46, `seed ${seed}: casual scored ${points} of 70`);
+    // Up to 50: since 7 November 2026 ordinary foot placement earns a few points instead of none.
+    assert.ok(points <= 50, `seed ${seed}: casual scored ${points} of 70`);
   }
 });
 
