@@ -1,7 +1,7 @@
 import { h, fmtDate } from './dom.mjs';
 import { listWalks } from '../store/db.mjs';
 import { createRunwayScene } from './scene.mjs';
-import { PARTS, MEASURED_MAX, JUDGE_MAX } from '../lib/score.mjs';
+import { PARTS, MEASURED_MAX, JUDGE_MAX, RULES, FOOTAGE } from '../lib/score.mjs';
 import { generateRound } from '../lib/sampleWalk.mjs';
 import { processFrames } from '../lib/process.mjs';
 
@@ -37,6 +37,42 @@ const scoreRow = (part, tone) => h('li', { class: 'rw-points__row' },
 const fairness = (title, text) => h('div', { class: 'rw-fair__item' }, h('h3', null, title), h('p', null, text));
 
 const source = (text, href, label) => h('li', null, text, ' ', h('a', { href, target: '_blank', rel: 'noopener noreferrer' }, label));
+
+const need = (title, text) => h('li', null, h('h3', null, title), h('p', { class: 'rw-muted' }, text));
+
+// The measurements that separated professional models from everyone else on real footage.
+const FOOTAGE_ROWS = [
+  { key: 'shoulderSway', label: 'Shoulder rock', unit: '°', max: 8, other: 'stock', otherName: 'stock clips' },
+  { key: 'headMovement', label: 'Head movement', unit: '% of height', max: 7, other: 'stock', otherName: 'stock clips' },
+  { key: 'footLine', label: 'Foot placement', unit: '% of height', max: 9, other: 'published', otherName: 'published everyday walking' },
+];
+
+/** A dot for each group on the scale the points are given on, which is shaded where marks are earned. */
+function footageChart() {
+  const legend = h('ul', { class: 'rw-legend' },
+    h('li', null, h('span', { class: 'rw-dots__key rw-dots__key--pros', 'aria-hidden': 'true' }), 'Professional models, Milan runway'),
+    h('li', null, h('span', { class: 'rw-dots__key rw-dots__key--other', 'aria-hidden': 'true' }), 'Everyday walkers'),
+    h('li', null, h('span', { class: 'rw-dots__key rw-dots__key--zone', 'aria-hidden': 'true' }), 'Where points are earned'));
+  const rows = FOOTAGE_ROWS.map((row) => {
+    const data = FOOTAGE[row.key];
+    const { best, worst } = RULES[row.key];
+    const at = (v) => `${(Math.min(v, row.max) / row.max) * 100}%`;
+    const short = row.unit === '°' ? '°' : '%';
+    const fmt = (v) => `${v.toFixed(1)}${short}`;
+    const other = data[row.other];
+    return h('li', { class: 'rw-dots__row' },
+      h('div', { class: 'rw-dots__head' }, h('strong', null, row.label), h('span', { class: 'rw-muted rw-small' }, `Full marks up to ${fmt(best)}, none from ${fmt(worst)}`)),
+      h('div', {
+        class: 'rw-dots__track',
+        role: 'img',
+        'aria-label': `${row.label}: professional models ${fmt(data.pros)}, ${row.otherName} ${fmt(other)}. Full marks up to ${fmt(best)}, none from ${fmt(worst)}.`,
+      },
+      h('span', { class: 'rw-dots__zone', style: `width:${at(worst)};--best:${(best / worst) * 100}%` }),
+      h('span', { class: 'rw-dots__dot rw-dots__dot--pros', style: `left:${at(data.pros)}`, title: `Professional models: ${fmt(data.pros)}` }, h('span', { class: 'rw-dots__val' }, fmt(data.pros))),
+      h('span', { class: 'rw-dots__dot rw-dots__dot--other', style: `left:${at(other)}`, title: `Everyday walkers, ${row.otherName}: ${fmt(other)}` }, h('span', { class: 'rw-dots__val' }, fmt(other)))));
+  });
+  return h('div', { class: 'rw-dots' }, legend, h('ul', { class: 'rw-dots__list' }, rows));
+}
 
 /** What the figure in the picture measures, worked out by the real code from its made-up walk. */
 function sceneCallouts() {
@@ -86,7 +122,13 @@ export function homeScreen(root) {
         h('li', { class: 'rw-step' },
           h('span', { class: 'rw-step__num', 'aria-hidden': 'true' }, '3'),
           h('h3', null, 'Get judged'),
-          h('p', null, 'If you agree, Gemini sees a dozen stills with your face pixelated, and gives its opinion. You get your score, the reasoning behind every point, and the walk closest to yours.')))),
+          h('p', null, 'If you agree, Gemini sees a dozen stills with your face pixelated, and gives its opinion. You get your score, the reasoning behind every point, and the walk closest to yours.'))),
+      h('h3', { class: 'rw-needs__title' }, 'Before you start'),
+      h('ul', { class: 'rw-needs' },
+        need('A camera at hip height', 'An iPhone through Continuity Camera works best, at 60 frames a second. Any webcam will do.'),
+        need('About 6 m of clear floor', 'You turn about 2.5 m from the camera, so start as far back as you can.'),
+        need('Light in front of you', 'A bright window behind you hides your pose from the tracker.'),
+        need('Two minutes', 'Stand tall for a moment, then walk up and back two or three times. It stops by itself.'))),
 
     h('section', { class: 'rw-section rw-score-guide' },
       h('div', { class: 'rw-score-guide__intro' },
@@ -104,6 +146,15 @@ export function homeScreen(root) {
         h('h3', { class: 'rw-points__head' }, `Gemini's opinion, ${JUDGE_MAX} points`),
         h('ul', { class: 'rw-points__list' }, OPINION.map((p) => scoreRow(p, 'opinion'))))),
 
+    h('section', { class: 'rw-section rw-proof' },
+      h('div', { class: 'rw-proof__intro' },
+        h('h2', { class: 'rw-section__title' }, 'Checked against real walks'),
+        h('p', { class: 'rw-lede' }, 'We ran real footage through the same code: professional models walking at the camera in a Milan show, and people walking toward a camera in stock clips.'),
+        h('p', { class: 'rw-muted' }, 'The measurements that separated them carry the points. Bounce and trunk sway did not separate them, so they count for little, and only exaggeration costs much.')),
+      h('figure', { class: 'rw-proof__figure' },
+        footageChart(),
+        h('figcaption', { class: 'rw-muted rw-small' }, 'Middle values from 14 runway shots (9 with both feet clear) and 5 stock clips. The footage was not filmed for this, so treat it as a check on the rules, not a study. Everyday foot placement is from motion capture of 10 women (Moon and Choi 2025).'))),
+
     h('section', { class: 'rw-band' },
       h('div', { class: 'rw-band__inner' },
         h('h2', { class: 'rw-section__title' }, 'The same rules for every body'),
@@ -118,7 +169,11 @@ export function homeScreen(root) {
             h('p', null, 'This is a game. No study sets targets for a runway walk, so the rules are ours, informed by what has been published:'),
             h('ul', null,
               source('Foot placement has the most points because it has the clearest evidence. 10 model applicants landed 1.54 cm apart, against 8.12 cm for 10 other women. The same authors warn that walking this narrowly may raise the risk of injury, so treat it as a game.', 'https://doi.org/10.5103/KJAB.2025.35.3.157', 'Moon and Choi, 2025'),
-              source('Most people prefer a step width of about 0.13 leg lengths, because it costs the least energy.', 'https://doi.org/10.1098/rspb.2001.1761', 'Donelan, Kram and Kuo, 2001')),
+              source('Most people prefer a step width of about 0.13 leg lengths, because it costs the least energy.', 'https://doi.org/10.1098/rspb.2001.1761', 'Donelan, Kram and Kuo, 2001'),
+              source('A single phone in front of the walker measured step width within about 1 to 3 cm of motion capture, which is why full marks for feet start at 2.5% of height.', 'https://doi.org/10.3390/s25216551', 'Ksoll and others, 2025'),
+              source('In a study of 7 models and 10 other women on a treadmill, a steadier head was rated more attractive in heels, and so was a head tilted down. So only looking at the floor costs points here.', 'https://doi.org/10.1038/s41598-023-45130-2', 'Tanabe and Yamamoto, 2023'),
+              source('Everyone\'s trunk sways about 3° from side to side, so trunk sway counts for little.', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC2843703/', 'Chung and others, 2010'),
+              source('Everyone rises 3.6 to 4.9 cm with each step at ordinary speeds, so only exaggerated bounce costs points.', 'https://doi.org/10.1682/JRRD.2003.10.0150', 'Orendurff and others, 2004')),
             h('p', null, 'From the front, we cannot see forward lean, or how far your arms swing behind you. Trackers can be less accurate on some bodies and in some clothes, and we can reduce the effect of that but not remove it. Gemini\'s half is an opinion, even with its instructions to ignore body, face, age, race and gender.'))))),
 
     h('section', { class: 'rw-section' },

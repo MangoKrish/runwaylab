@@ -55,6 +55,11 @@ export function reviewScreen(root, app, id) {
   const actions = h('div', { class: 'rw-actions rw-actions--top' });
   const playerSlot = h('div');
   const ribbon = h('div', { class: 'rw-ribbon' });
+  // Names live in a key under the ribbon, so short segments never cut a word in half.
+  const ribbonKey = h('p', { class: 'rw-ribbon__key', 'aria-hidden': 'true' },
+    h('span', null, h('i', { class: 'rw-ribbon__swatch' }), 'Toward the camera'),
+    h('span', null, h('i', { class: 'rw-ribbon__swatch rw-ribbon__swatch--turn' }), 'Turn'),
+    h('span', null, h('i', { class: 'rw-ribbon__swatch rw-ribbon__swatch--back' }), 'Walking back'));
   const summary = h('div', { class: 'rw-result__summary' });
   const breakdownPanel = h('div', { class: 'rw-breakdown' });
   const momentsPanel = h('div');
@@ -329,6 +334,9 @@ export function reviewScreen(root, app, id) {
       a.measured.laps?.length > 1 ? h('div', { class: 'rw-focus' },
         h('p', { class: 'rw-label' }, `Based on ${a.measured.lapsUsed} of ${a.measured.laps.length} walks`),
         h('p', null, a.measured.laps.map((l) => (l.points === null ? `Walk ${l.number}: not usable` : `Walk ${l.number}: ${l.points}/70`)).join(' · '))) : null,
+      a.measured.strength ? h('div', { class: 'rw-focus' },
+        h('p', { class: 'rw-label' }, `Your strongest part: ${a.measured.strength.label}, ${a.measured.strength.points} of ${a.measured.strength.max}`),
+        h('p', null, a.measured.strength.note)) : null,
       a.measured.focus ? h('div', { class: 'rw-focus' },
         h('p', { class: 'rw-label' }, `Your biggest win: ${a.measured.focus.label}, up to ${a.measured.focus.gain} more points`),
         h('p', null, a.measured.focus.tip)) : null,
@@ -350,21 +358,23 @@ export function reviewScreen(root, app, id) {
     const a = session.analysis;
     if (!a?.duration) {
       ribbon.hidden = true;
+      ribbonKey.hidden = true;
       return;
     }
-    const seg = (name, range, showName) => range && h('button', {
+    const laps = a.laps?.length ? a.laps : [a.phases];
+    const seg = (name, kind, range, lap) => range && h('button', {
       type: 'button',
-      class: `rw-ribbon__seg rw-ribbon__seg--${name.toLowerCase()}`,
+      class: `rw-ribbon__seg rw-ribbon__seg--${kind}`,
       style: `left:${(range[0] / a.duration) * 100}%;width:${(Math.max(range[1] - range[0], 0.1) / a.duration) * 100}%`,
       onClick: () => player?.seek(range[0]),
-      'aria-label': `Go to ${name}, at ${fmtTime(range[0])}`,
-    }, showName ? name : '');
-    const laps = a.laps?.length ? a.laps : [a.phases];
-    // With several walks there is no room for every name, so only the first lap is labeled.
+      title: laps.length > 1 ? `Walk ${lap}: ${name}` : name,
+      'aria-label': `Go to ${laps.length > 1 ? `walk ${lap}, ` : ''}${name.toLowerCase()}, at ${fmtTime(range[0])}`,
+    });
     laps.forEach((lap, i) => {
-      add(ribbon, seg('Approach', lap.approach, i === 0), seg('Turn', lap.turn, i === 0), seg('Back', lap.back, i === 0));
+      add(ribbon, seg('Toward the camera', 'approach', lap.approach, i + 1), seg('Turn', 'turn', lap.turn, i + 1), seg('Walking back', 'back', lap.back, i + 1));
     });
     ribbon.hidden = !ribbon.children.length;
+    ribbonKey.hidden = ribbon.hidden;
   }
 
   function metricCard(metric) {
@@ -608,7 +618,7 @@ export function reviewScreen(root, app, id) {
           nameInput),
         actions),
       h('div', { class: 'rw-result' },
-        h('div', { class: 'rw-result__media' }, playerSlot, ribbon, announce),
+        h('div', { class: 'rw-result__media' }, playerSlot, ribbon, ribbonKey, announce),
         summary),
       breakdownPanel,
       momentsPanel,

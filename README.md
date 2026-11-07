@@ -43,7 +43,7 @@ The free tier allows 20 requests per model per day, resetting at midnight Pacifi
 | Presence (Gemini) | 15 | Confidence, intent and how you carry yourself |
 | Style (Gemini) | 15 | How your outfit and attitude work together |
 
-Every part shows what was measured, the scale it was held to, and how much of the marks it earned. Shown for interest and worth no points: hip movement and toe direction.
+Every part shows what was measured, the scale it was held to, how much of the marks it earned and, where real footage or a study gives one, what real walkers measured. The result opens with your strongest part and your biggest win. Shown for interest and worth no points: hip movement and toe direction.
 
 ## Making it fair and accurate
 
@@ -63,18 +63,42 @@ Every part shows what was measured, the scale it was held to, and how much of th
 
 ### Where the numbers come from
 
-No published study sets targets for a runway walk, so the rules are ours and this is a game. Foot placement has the most weight because it has the clearest evidence.
+No published study sets targets for a runway walk, so the rules are ours and this is a game. Foot placement has the most weight because it has the clearest evidence. Every source below was read in full.
 
-| Value | Source | How it was read |
+| Value | Source | What it changed |
 |---|---|---|
-| 10 model applicants averaging 177.2 cm: step width 1.54 cm. 10 other women averaging 172.3 cm: 8.12 cm. That is 0.9% and 4.7% of height. The authors link this walk to possible injury risk. | [Moon and Choi 2025](https://doi.org/10.5103/KJAB.2025.35.3.157) | Full text |
-| Preferred step width 0.13 leg lengths, 10 adults, leg length 0.93 m. About 6.9% of height, taking leg length as 53% of height. | [Donelan, Kram and Kuo 2001](https://doi.org/10.1098/rspb.2001.1761) | Full text |
-| Sideways trunk movement of about 3.3° | [Chung 2010](https://pmc.ncbi.nlm.nih.gov/articles/PMC2843703/) | Summary only, check before citing |
-| Vertical movement of the centre of mass, 2.74 to 4.83 from 0.7 to 1.6 m/s. Units are not in the abstract, and read here as cm. | [Orendurff 2004](https://doi.org/10.1682/JRRD.2003.10.0150) | Abstract only, check before citing |
-| Stride time variation usually below 3% in young adults | [Beauchet 2009](https://pmc.ncbi.nlm.nih.gov/articles/PMC2731039) | Summary only, check before citing |
-| Head tilt and backward arm swing correlated with rated attractiveness; 7 models and 10 non-models pooled | [Scientific Reports 2023](https://www.nature.com/articles/s41598-023-45130-2) | Summary only, check before citing |
+| 10 model applicants averaging 177.2 cm: step width 1.54 cm. 10 other women averaging 172.3 cm: 8.12 cm. That is 0.9% and 4.7% of height. Walking speed did not differ significantly (1.50 against 1.39 m/s). The authors link this walk to possible injury risk. | [Moon and Choi 2025](https://doi.org/10.5103/KJAB.2025.35.3.157) | Foot placement is worth the most |
+| Preferred step width 0.13 leg lengths, 10 adults, leg length 0.93 m. About 6.9% of height, taking leg length as 53% of height. | [Donelan, Kram and Kuo 2001](https://doi.org/10.1098/rspb.2001.1761) | No foot marks from 7% |
+| One iPad 4.2 m in front of the walker against motion capture: step width 9.6 against 10.6 cm, limits of agreement +1.3 to −3.3 cm | [Ksoll and others 2025](https://doi.org/10.3390/s25216551) | Full foot marks start at 2.5%, since smaller differences are within the error |
+| Trunk obliquity range in 20 adults walking barefoot: 3.3 ± 1.4° (women 3.1°) | [Chung and others 2010](https://pmc.ncbi.nlm.nih.gov/articles/PMC2843703/) | Trunk sway counts for little |
+| Vertical movement of the centre of mass in 10 adults: 2.74 cm at 0.7 m/s, 3.61 at 1.0, 4.06 at 1.2, 4.89 cm at a self-chosen 1.61 m/s | [Orendurff and others 2004](https://doi.org/10.1682/JRRD.2003.10.0150) | Only exaggerated bounce costs points |
+| Stride time variation in 29 young adults: 2.2 ± 0.7% at their own speed, rising to 3 to 5% when slower | [Beauchet and others 2009](https://pmc.ncbi.nlm.nih.gov/articles/PMC2731039) | Rhythm keeps full marks up to 5% |
+| 7 professional models and 10 other women on a treadmill at 1.0 m/s, pooled. Attractiveness ratings correlated with backward arm swing (r = .66 to .72), a head tilted down (r = .65 to .68) and, in heels, a steadier head (r = −.44) | [Tanabe and Yamamoto 2023](https://doi.org/10.1038/s41598-023-45130-2) | Only looking at the floor costs points. Head steadiness stays. |
 
-The foot scale gives full marks at 2% of height, which allows for tracker noise above the applicants' 0.9%, and none at 7%. Ordinary walkers at 4.7% earn about 9 of the 20 points.
+The foot scale gives full marks at 2.5% of height and none at 7%. Ordinary walkers at 4.7% earn about 10 of the 20 points.
+
+### Checked against real footage
+
+To test the rules on real walks, real footage went through the app's own tracker and measuring code:
+
+- **Professional models.** The [Emporio Armani spring 2016 show](https://commons.wikimedia.org/wiki/File:Emporio_Armani_2016_Spring_Summer_Women_Collection.webm), filmed from the end of the runway by Stile Italia TV (CC BY 3.0, 1280 × 720, 25 fps). It was cut at scene changes into 50 shots. 14 showed a model's whole upper body walking at the camera, 9 of them with both feet clear.
+- **Everyday walkers.** Five stock clips from [Mixkit](https://mixkit.co/license/) of people walking toward a camera (numbers 21358, 32618, 35992, 49579 and 596).
+
+Each shot was measured as one walk toward the camera, with the minimum length lowered to 1.5 s for the short shots and no standing calibration. Middle values:
+
+| Measurement | Professional models | Stock clips | Separates them? |
+|---|---:|---:|---|
+| Foot placement, % of height | 3.0 (1.7 to 4.3) | Only 2 clips usable | Compared with published 4.7 to 6.9% instead |
+| Shoulder rock | 2.6° | 5.6° | Yes |
+| Head movement, % of height | 1.7 | 3.3 | Yes |
+| Trunk sway | 2.2° | 2.1° | No |
+| Bounce, % of height | 2.5 | 1.3 | No, and the models bounced more |
+| Arm swing, % of height | 2.2 (1.4 to 4.8) | 1.7 | No |
+| Step timing variation | 5% | Too few steps | Not tested |
+
+What changed as a result: the models were losing marks for bounce, trunk sway and a small arm swing, none of which separated them from anyone. Those now count for little or allow more, and the points sit with feet, shoulders and head steadiness. Scored by the app's own code on the parts these shots can show (feet, rhythm, posture, head and arms), the models' middle score went from 72% to 83% of the points. The two stock clips with feet visible went from 28% and 64% to 26% and 66%. The synthetic test walks score 70, 41 to 43, and 17 to 18 of 70 for catwalk, casual and sloppy.
+
+These are small samples from video that was not filmed for this, so treat them as a check on the rules, not a study. The broadcast camera zooms and pans: lengths are ratios within each frame, so zoom does not change them, but it can distort pace, shoulder level, straight line and bounce, so the models' real scores on those are probably higher than measured here. Stock clips may use actors and are often in slow motion, so their timing was not used. The footage is not part of this repository.
 
 The thresholds have not yet been tuned on a set of real walks filmed for this app. To see every number behind a score for your own clips, keep them on your computer and run:
 

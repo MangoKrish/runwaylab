@@ -5,14 +5,22 @@
 // compared with how they stood, tracker noise from this setup is taken off, and anything that could not be seen
 // is left out rather than marked down, so long hair, a head covering or a gown costs nothing.
 //
-// The rules below are ours, informed by published values where they exist. Foot placement has the most weight
-// because it has the strongest evidence: 10 model applicants averaging 177 cm landed 1.54 cm apart, against 8.12 cm
-// for 10 other women averaging 172 cm (Moon and Choi 2025), and people prefer about 0.13 leg lengths (Donelan 2001).
-// As a share of height that is about 1% against 5 to 7%. Published sideways trunk movement is about 3.3 degrees (Chung 2010), and centre of
-// mass rise is 2.7 to 4.8 cm (Orendurff 2004), which is why ordinary values land mid-scale on those two. No
-// published study sets runway targets for the rest, so this is a game, and the app says so.
-// Bump the version if the rules change.
-export const SCORE_RULES_VERSION = 'rl-score-4';
+// The rules below are ours, informed by published values where they exist, and checked against real footage:
+// 14 shots of professional models walking at the camera in a Milan show, and five stock clips of people walking
+// toward a camera, all measured by this code (see the README).
+//
+// Foot placement has the most weight because it has the strongest evidence: 10 model applicants landed 1.54 cm
+// apart, against 8.12 cm for 10 other women (Moon and Choi 2025), and people prefer about 0.13 leg lengths
+// (Donelan 2001). A phone in front measures step width to within about 1 to 3 cm (Ksoll 2025), so full marks start
+// at 2.5% of height, where the professionals measured 3.0% in the middle.
+//
+// Shoulder rock and head movement separated the professionals from everyone else in the footage (2.6° against
+// 5.6°, and 1.7% against 3.3%), and a steadier head was rated more attractive in heels (Tanabe and Yamamoto 2023).
+// Trunk sway and bounce did not separate them: everyone sways about 3° from side to side (Chung 2010) and rises
+// 3.6 to 4.9 cm a step (Orendurff 2004), so those count for little and only exaggeration costs much. A head tilted
+// down was rated more attractive in that study, so only looking at the floor costs points. This is a
+// game, and the app says so. Bump the version if the rules change.
+export const SCORE_RULES_VERSION = 'rl-score-5';
 /** Below this many measurable points of the 70, there is too little to give a fair score. */
 export const MIN_MEASURED_POINTS = 40;
 
@@ -37,28 +45,54 @@ export function ramp(x, best, worst) {
 }
 
 export const RULES = {
-  footLine: { best: 2, worst: 7 },
+  footLine: { best: 2.5, worst: 7 },
   stepRhythm: { best: 0.05, worst: 0.2 },
   pace: { best: 0.12, worst: 0.5 },
-  shoulderSway: { best: 1.2, worst: 5 },
+  shoulderSway: { best: 2, worst: 6 },
   shoulderLevel: { best: 0.8, worst: 4 },
-  trunkSway: { best: 0.8, worst: 3.5 },
-  bounce: { best: 1.2, worst: 3.5 },
+  trunkSway: { best: 2.5, worst: 5 },
+  bounce: { best: 3, worst: 6 },
   neck: { best: 12, worst: 7.3 },
   gaze: { best: 1.5, worst: 4.7 },
   neckDrop: { best: 0.6, worst: 3.5 },
-  gazeDrop: { best: 0.45, worst: 2.6 },
+  gazeDrop: { best: 1.5, worst: 4 },
   headTilt: { best: 1.5, worst: 8 },
   torsoSpread: { best: 2.5, worst: 11 },
-  headMovement: { best: 2, worst: 9 },
+  headMovement: { best: 2, worst: 5.5 },
   armBalance: { best: 0.75, worst: 0.3 },
   turnTime: { best: 2.2, worst: 6 },
   turnWobble: { best: 12, worst: 47 },
 };
 
+/**
+ * Medians measured by this code on real footage: 14 shots of professional models walking at the camera in the
+ * Emporio Armani spring 2016 show (9 of them with both feet clear), and 5 stock clips of people walking toward a
+ * camera. `published` is everyday step width from Moon and Choi 2025. Method and caveats are in the README.
+ */
+export const FOOTAGE = {
+  shoulderSway: { pros: 2.6, stock: 5.6 },
+  headMovement: { pros: 1.7, stock: 3.3 },
+  footLine: { pros: 3.0, published: 4.7 },
+};
+
+/** Where real walkers landed, shown beside each measurement so a number means something. */
+const PROS = 'Professional models on a Milan runway, measured by this code';
+const STOCK = 'People walking toward a camera in stock clips';
+export const REFERENCES = {
+  footLine: `${PROS}: 1.7 to 4.3%, ${FOOTAGE.footLine.pros.toFixed(1)}% in the middle. Published everyday walking: about 4.7 to 6.9%.`,
+  stepRhythm: `${PROS}: 5% in the middle, over short shots.`,
+  shoulderSway: `${PROS}: ${FOOTAGE.shoulderSway.pros}°. ${STOCK}: ${FOOTAGE.shoulderSway.stock}°.`,
+  trunkSway: 'Everyday walking sways about 3° side to side (Chung 2010), and the professionals measured about the same, so this counts for little.',
+  bounce: 'Everyone rises 3.6 to 4.9 cm a step (Orendurff 2004), about 2 to 3% of height. The professionals measured 2.5%, so only exaggerated bouncing costs points.',
+  headMovement: `${PROS}: ${FOOTAGE.headMovement.pros}%. ${STOCK}: ${FOOTAGE.headMovement.stock}%.`,
+  gazeDrop: 'A head tilted down was rated more attractive in one treadmill study of models (Tanabe and Yamamoto 2023), so only looking at the floor costs points.',
+  gaze: 'A head tilted down was rated more attractive in one treadmill study of models (Tanabe and Yamamoto 2023), so only looking at the floor costs points.',
+  armSwing: `${PROS}: 1.4 to 4.8%, 2.2% in the middle.`,
+};
+
 /** A relaxed swing earns full marks. Arms held stiff, or flailing, earn less. */
 export function armAmount(x) {
-  if (x < 3) return ramp(x, 3, 0.6);
+  if (x < 1.2) return ramp(x, 1.2, 0.3);
   if (x > 20) return ramp(x, 20, 38);
   return 1;
 }
@@ -94,6 +128,7 @@ function reason(metrics, key, label) {
     value: `${pretty(shown(m), m.unit === 'ratio' ? 2 : 1)}${u}`,
     scale: `Full marks at ${pretty(scaleValue(rule.best), 2)}${u} or ${lowerIsBetter ? 'less' : 'more'}, none at ${pretty(scaleValue(rule.worst), 2)}${u} or ${lowerIsBetter ? 'more' : 'less'}.`,
     share: Math.round(ramp(m.value, rule.best, rule.worst) * 100),
+    ref: REFERENCES[key] ?? null,
   };
 }
 
@@ -132,7 +167,7 @@ function criteria(m) {
   const neck = usingStance ? of(m, 'neckDrop') : of(m, 'neck');
   const gaze = m.gazeDrop?.ok ? of(m, 'gazeDrop') : of(m, 'gaze');
   const tilt = of(m, 'headTilt');
-  add('posture', blend([[shoulders, 4], [level, 2], [trunk, 4], [neck, 3], [gaze, 2], [bounce, 3], [tilt, 2]]),
+  add('posture', blend([[shoulders, 5], [level, 2], [trunk, 1], [neck, 3], [gaze, 1], [bounce, 1], [tilt, 2]]),
     `Your shoulders rocked ${pretty(m.shoulderSway.value)}° and your trunk swayed ${pretty(m.trunkSway.value)}°.${m.neckDrop?.ok ? ` Your head sat ${pretty(m.neckDrop.value)}% of your height lower than when you stood tall.` : ''}`,
     gaze !== null && gaze < 0.5 ? 'Lift your chin and look straight ahead, not at the floor.' : neck !== null && neck < 0.5 ? 'Keep the height you had standing still: grow tall through your neck as you walk.' : 'Stand tall with level shoulders, and let your legs do the moving.',
     [
@@ -165,7 +200,7 @@ function criteria(m) {
     [
       amount === null
         ? { label: 'Arm swing', value: 'No data', scale: m.armSwing.why, share: null }
-        : { label: 'Arm swing', value: `${pretty(m.armSwing.value)}% of your height`, scale: 'Full marks between 3% and 20% of your height. Stiffer or wilder earns less.', share: Math.round(amount * 100) },
+        : { label: 'Arm swing', value: `${pretty(m.armSwing.value)}% of your height`, scale: 'Full marks between 1.2% and 20% of your height. Stiffer or wilder earns less.', share: Math.round(amount * 100), ref: REFERENCES.armSwing },
       reason(m, 'armBalance', 'Left-right balance'),
     ]);
 
@@ -198,8 +233,12 @@ export function measuredScore(metrics, phases) {
   const seenMax = seen.reduce((sum, p) => sum + p.max, 0);
   if (seenMax < MIN_MEASURED_POINTS) return refuse(`We could only measure ${seenMax} of the ${MEASURED_MAX} points, which is too little for a fair score. Keep your whole body in frame.`);
   const earned = seen.reduce((sum, p) => sum + p.points, 0);
-  // The biggest available win, for the coaching line.
+  // The biggest available win, for the coaching line, and the best part, so the result opens with something true
+  // and kind as well as something to work on.
   const focus = [...seen].sort((a, b) => (b.max - b.points) - (a.max - a.points))[0];
+  const best = [...seen].sort((a, b) => b.quality - a.quality || b.max - a.max)[0];
+  const focusShown = focus.points < focus.max;
+  const strength = best && best.quality >= 0.5 && (!focusShown || best.key !== focus.key) ? { label: best.label, points: best.points, max: best.max, note: best.note } : null;
   return {
     ok: true,
     reason: null,
@@ -209,7 +248,8 @@ export function measuredScore(metrics, phases) {
     // Set only when something could not be seen, so the app can say so beside the score.
     scaled: seenMax < MEASURED_MAX ? { earned, seenMax, unseen: parts.filter((p) => !p.seen).map((p) => p.label) } : null,
     rules: SCORE_RULES_VERSION,
-    focus: focus.points < focus.max ? { label: focus.label, tip: focus.tip, gain: focus.max - focus.points } : null,
+    focus: focusShown ? { label: focus.label, tip: focus.tip, gain: focus.max - focus.points } : null,
+    strength,
   };
 }
 

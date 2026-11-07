@@ -55,6 +55,9 @@ export function studioScreen(root, app) {
   const stage = h('div', { class: 'rw-stage' }, video, canvas, timer, count, prompt);
   const takeSlot = h('div', { class: 'rw-takeslot', hidden: true });
   const announce = liveRegion('rw-sr');
+  // Where they are in the whole sequence, so nobody has to guess what happens after "hold still".
+  const flow = h('ol', { class: 'rw-flow', 'aria-label': 'Your walk, step by step' });
+  let flowKey = '';
 
   // ── controls ──
   const primary = h('div', { class: 'rw-actions rw-actions--center' });
@@ -63,7 +66,7 @@ export function studioScreen(root, app) {
   const fpsLine = h('dl', { class: 'rw-fps' });
   const modelLine = h('p', { class: 'rw-muted rw-small' });
   const consentBox = h('div');
-  const lapSelect = h('select', { id: 'rw-laps', onChange: (e) => { s.lapsWanted = Number(e.target.value); remember(SAVED_LAPS, e.target.value); } },
+  const lapSelect = h('select', { id: 'rw-laps', onChange: (e) => { s.lapsWanted = Number(e.target.value); remember(SAVED_LAPS, e.target.value); renderFlow('frame'); } },
     [3, 2].map((n) => h('option', { value: n, selected: n === s.lapsWanted }, `${n} walks`)));
   const handsFreeBox = h('input', { type: 'checkbox', checked: true, onChange: (e) => { s.handsFree = e.target.checked; s.fullSince = null; renderControls(); } });
   const rotateButton = button('Rotate picture', () => {
@@ -79,6 +82,7 @@ export function studioScreen(root, app) {
     h('div', { class: 'rw-studio' },
       stage,
       takeSlot,
+      flow,
       announce,
       primary,
       problem,
@@ -90,14 +94,6 @@ export function studioScreen(root, app) {
         consentBox),
       h('div', { class: 'rw-studio__panels' },
         h('section', { class: 'rw-panel' },
-          h('h2', null, 'Camera'),
-          h('label', { class: 'rw-field' }, h('span', null, 'Which camera'), cameraSelect),
-          fpsLine,
-          modelLine,
-          h('div', { class: 'rw-actions' }, rotateButton),
-          h('p', { class: 'rw-muted rw-small' }, 'Picture sideways or upside down? Rotate it. Tracking and the recording follow.')),
-        music.el,
-        h('section', { class: 'rw-panel' },
           h('h2', null, 'Set up the runway'),
           h('ol', { class: 'rw-checklist' },
             h('li', null, 'Put your iPhone on a stand, sideways (landscape), at about hip height. Sideways gives the widest view.'),
@@ -105,6 +101,14 @@ export function studioScreen(root, app) {
             h('li', null, 'Light the walker from the front. A bright window behind them hides their pose.'),
             h('li', null, 'Turn off Center Stage (Mac menu bar, Video Effects). It moves the picture, which breaks the measurements.'),
             h('li', null, 'Keep everyone else out of the lane.'))),
+        h('section', { class: 'rw-panel' },
+          h('h2', null, 'Camera'),
+          h('label', { class: 'rw-field' }, h('span', null, 'Which camera'), cameraSelect),
+          fpsLine,
+          modelLine,
+          h('div', { class: 'rw-actions' }, rotateButton),
+          h('p', { class: 'rw-muted rw-small' }, 'Picture sideways or upside down? Rotate it. Tracking and the recording follow.')),
+        music.el,
         h('section', { class: 'rw-panel' },
           h('h2', null, 'Or upload a clip'),
           h('p', { class: 'rw-muted rw-small' }, 'An MP4, MOV or WebM of a walk toward the camera and back, up to 2 minutes and 500 MB. It stays on this device.'),
@@ -122,7 +126,24 @@ export function studioScreen(root, app) {
     timer.hidden = phase !== 'recording';
     count.hidden = phase !== 'countdown';
     stage.dataset.phase = phase;
+    if (phase === 'countdown') renderFlow('still');
+    else if (phase === 'stopping' || phase === 'take') renderFlow('done');
+    else if (phase !== 'recording') renderFlow('frame');
     renderControls();
+  }
+
+  /** @param {string} current  frame, still, walk1 to walkN, or done. */
+  function renderFlow(current, force = false) {
+    const walks = s.phase === 'recording' && s.laps ? s.laps.target : s.lapsWanted;
+    const key = `${current}/${walks}`;
+    if (key === flowKey && !force) return;
+    flowKey = key;
+    const steps = [['frame', 'Get in frame'], ['still', 'Stand tall'], ...Array.from({ length: walks }, (_, i) => [`walk${i + 1}`, `Walk ${i + 1}`]), ['done', 'Your score']];
+    const at = steps.findIndex(([k]) => k === current);
+    clear(flow).append(...steps.map(([k, label], i) => h('li', {
+      class: i < at ? 'is-done' : null,
+      'aria-current': i === at ? 'step' : null,
+    }, h('span', { class: 'rw-flow__dot', 'aria-hidden': 'true' }, i < at ? '✓' : String(i + 1)), h('span', null, label, i < at ? h('span', { class: 'rw-sr' }, ', done') : null))));
   }
 
   function renderControls() {
@@ -384,6 +405,7 @@ export function studioScreen(root, app) {
       else if (tooClose) message = 'Stop and turn here';
       else if (phase === 'done') message = WALK_MESSAGES.done;
       else message = `Walk ${s.laps.lap} of ${s.laps.target}: ${WALK_MESSAGES[phase].toLowerCase()}`;
+      renderFlow(calibrating ? 'still' : phase === 'done' ? 'done' : `walk${Math.min(s.laps.lap, s.laps.target)}`);
       stage.dataset.urgent = tooClose ? 'true' : 'false';
       if (prompt.textContent !== message) {
         prompt.textContent = message;

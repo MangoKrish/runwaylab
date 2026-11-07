@@ -12,7 +12,8 @@ export function bar(label, points, max, note, why = null, about = null, seen = t
       about ? h('p', { class: 'rw-why__about' }, about) : null,
       h('ul', { class: 'rw-why__list' }, why.map((w) => h('li', null,
         h('div', { class: 'rw-why__head' }, h('strong', null, w.label), h('span', null, w.value), h('span', { class: 'rw-why__share' }, w.share === null ? 'Left out' : `${w.share}% of the marks`)),
-        h('p', { class: 'rw-muted rw-small' }, w.scale))))) : null);
+        h('p', { class: 'rw-muted rw-small' }, w.scale),
+        w.ref ? h('p', { class: 'rw-why__ref rw-small' }, w.ref) : null)))) : null);
 }
 
 /** Both halves of the score, side by side, each labeled by where it came from. */

@@ -574,7 +574,9 @@ test('ramp: works in both directions', () => {
 
 test('arm swing: relaxed is best; stiff and flailing both lose', () => {
   assert.equal(armAmount(10), 1);
-  assert.ok(armAmount(1) < 0.5);
+  // Professional models on a real runway swung 1.4 to 4.8% of their height, so a small swing is not stiff.
+  assert.equal(armAmount(1.4), 1);
+  assert.ok(armAmount(0.5) < 0.5);
   assert.ok(armAmount(32) < 0.5);
 });
 
@@ -653,6 +655,23 @@ test('every criterion explains itself, and the weakest one gets a tip', () => {
     assert.ok(!/undefined|NaN|null/.test(part.note), `${part.key}: ${part.note}`);
   }
   assert.ok(r.measured.focus?.tip);
+});
+
+test('the result names a strongest part that is not the biggest win, and a perfect walk still gets one', () => {
+  const casual = scoreOf('casual').measured;
+  if (casual.strength) assert.notEqual(casual.strength.label, casual.focus.label);
+  const catwalk = scoreOf('catwalk').measured;
+  assert.ok(catwalk.strength, 'a top walk still hears what it did best');
+  assert.ok(catwalk.strength.points >= catwalk.strength.max / 2);
+});
+
+test('measurements with real-world reference values show them, and only those', () => {
+  const r = scoreOf('casual');
+  const lines = r.measured.parts.flatMap((p) => p.why);
+  const foot = lines.find((w) => w.label === 'Distance between feet');
+  assert.match(foot.ref, /Milan runway/);
+  const turn = lines.find((w) => w.label === 'Turn time');
+  assert.equal(turn.ref, null, 'no footage measured turns, so none is claimed');
 });
 
 test('feet out of frame leaves out the foot points and says why, rather than guessing', () => {
