@@ -155,7 +155,7 @@ export function homeScreen(root) {
             h('span', { class: 'rw-hero__line' }, 'Walk up.'), h('br', null),
             h('span', { class: 'rw-hero__line' }, 'Turn.'), h('br', null),
             h('span', { class: 'rw-hero__line rw-hero__accent' }, 'Get judged.')),
-          h('p', { class: 'rw-hero__lede' }, 'Walk toward the camera and back. We track 26 body landmarks to measure how you really move, Gemini judges your presence and style, and you find out if you have a runway walk.'),
+          h('p', { class: 'rw-hero__lede' }, 'Turn every runway walk into progress. Analyze your posture, refine your rhythm, and perfect your movement with personalized insights that help you walk with confidence.'),
           h('div', { class: 'rw-actions rw-actions--split rw-hero__actions' },
             h('a', { class: 'rw-btn rw-btn--solid rw-btn--big rw-actions__full', href: '#/studio' }, 'Start a walk'),
             h('a', { class: 'rw-btn rw-btn--big', href: '#/review/sample' }, 'See a sample'),
