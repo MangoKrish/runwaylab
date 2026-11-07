@@ -785,12 +785,14 @@ test('cameras: insists on 50+ fps first, and falls back to the best picture', ()
   assert.deepEqual(BEST_VIDEO, { width: { ideal: 1920 }, height: { ideal: 1440 }, frameRate: { ideal: 60 } });
 });
 
-test('cameras: Desk View is left out, the iPhone is preferred, and a saved choice wins', () => {
+test('cameras: Desk View is left out, and an iPhone wins over a saved laptop camera', () => {
   const cams = [{ id: 'a', label: 'MacBook Pro Camera' }, { id: 'b', label: 'K iPhone Camera' }, { id: 'c', label: 'K iPhone Desk View Camera' }, { id: 'd', label: 'MacBook Pro Desk View Camera' }];
   const usable = usableCameras(cams);
   assert.deepEqual(usable.map((c) => c.id), ['a', 'b']);
   assert.equal(preferredCamera(usable, null).id, 'b');
-  assert.equal(preferredCamera(usable, 'a').id, 'a');
+  assert.equal(preferredCamera(usable, 'a').id, 'b', 'a laptop camera picked once does not beat the iPhone');
+  assert.equal(preferredCamera([...usable, { id: 'e', label: 'Other iPhone Camera' }], 'e').id, 'e', 'the chosen one of two iPhones');
+  assert.equal(preferredCamera([{ id: 'a', label: 'MacBook Pro Camera' }, { id: 'x', label: 'Webcam' }], 'x').id, 'x');
   assert.equal(preferredCamera(usable, 'gone').id, 'b');
   assert.equal(preferredCamera([{ id: 'x', label: 'Webcam' }], null).id, 'x');
   assert.equal(preferredCamera([], null), null);

@@ -4,7 +4,7 @@
 import { h, button, clear, fmtTime, liveRegion, reducedMotion, icon, artSvg } from './dom.mjs';
 import { drawSkeleton, drawFraming } from './overlay.mjs';
 import { createPlayer } from './player.mjs';
-import { openCamera, listCameras, preferredCamera, stopStream, streamFormat, FpsMeter, startRecording, pickRecordingType } from '../capture/camera.mjs';
+import { openCamera, listCameras, preferredCamera, isIphone, stopStream, streamFormat, FpsMeter, startRecording, pickRecordingType } from '../capture/camera.mjs';
 import { checkUpload } from '../capture/upload.mjs';
 import { createTracker } from '../pose/tracker.mjs';
 import { makeGrabber } from '../pose/video.mjs';
@@ -88,6 +88,14 @@ export function studioScreen(root, app) {
   const problem = h('p', { class: 'rw-error', role: 'alert', hidden: true });
   const cameraSelect = h('select', { disabled: true, 'aria-label': 'Camera', onChange: (e) => switchCamera(e.target.value) }, h('option', { value: '' }, 'Shown once the camera is on'));
   const fpsLine = h('dl', { class: 'rw-fps' });
+  // The iPhone films sharper and smoother than a laptop camera. When it is missing from the list, say how to bring it.
+  const iphoneHelp = h('div', { class: 'rw-field__help rw-iphone-help', hidden: true },
+    h('p', null, h('strong', null, 'Use your iPhone for the best result.'), ' It is not showing yet. To connect it:'),
+    h('ol', null,
+      h('li', null, 'On the iPhone: Settings, General, AirPlay & Continuity, turn on Continuity Camera.'),
+      h('li', null, 'Same Apple ID on both, with Wi-Fi and Bluetooth on.'),
+      h('li', null, 'Lock the iPhone, put it near the Mac, sideways, back camera facing the runway, and keep it still.'),
+      h('li', null, 'It appears here by itself in a few seconds. If not, quit and reopen the browser, or try Safari.')));
   const modelLine = h('p', { class: 'rw-status' });
   const consentBox = h('div', { class: 'rw-consent' });
   const lapSelect = h('select', { id: 'rw-laps', 'aria-describedby': 'rw-laps-help', onChange: (e) => { s.lapsWanted = Number(e.target.value); remember(SAVED_LAPS, e.target.value); renderFlow('frame'); } },
@@ -135,6 +143,7 @@ export function studioScreen(root, app) {
       h('section', { class: 'rw-card rw-card--quiet rw-panel', 'aria-labelledby': 'rw-camera-title' },
         h('div', { class: 'rw-card__head' }, icon('camera'), h('h2', { id: 'rw-camera-title' }, 'Camera')),
         h('label', { class: 'rw-field' }, h('span', null, 'Which camera'), cameraSelect),
+        iphoneHelp,
         fpsLine,
         modelLine,
         h('div', { class: 'rw-studio__rotate' },
@@ -306,6 +315,7 @@ export function studioScreen(root, app) {
   function fillCameraList() {
     clear(cameraSelect).append(...s.cameras.map((cam) => h('option', { value: cam.id, selected: cam.id === s.deviceId }, cam.label)));
     cameraSelect.disabled = s.cameras.length < 2;
+    iphoneHelp.hidden = s.cameras.some(isIphone);
   }
 
   async function turnOn(deviceId) {
@@ -706,10 +716,21 @@ export function studioScreen(root, app) {
   }
 
   // ── start and stop ──
+  // Continuity Camera can take a while to wake the iPhone, so it often turns up after the studio has opened. When it
+  // does, and nobody is mid-walk, switch to it.
   const onDeviceChange = async () => {
     if (!s.stream || !s.alive) return;
     s.cameras = await listCameras().catch(() => s.cameras);
     fillCameraList();
+    const iphone = s.cameras.find(isIphone);
+    const using = s.cameras.find((c) => c.id === s.deviceId);
+    if (iphone && !isIphone(using) && ['live', 'problem'].includes(s.phase)) {
+      s.generation++;
+      clearInterval(s.ticker);
+      releaseCamera();
+      s.lock.reset();
+      await turnOn(iphone.id);
+    }
   };
   navigator.mediaDevices?.addEventListener('devicechange', onDeviceChange);
 

@@ -80,9 +80,18 @@ export async function listCameras() {
 /** Desk View looks down at a desk through a warped picture, which is no use for measuring a person. */
 export const usableCameras = (cameras) => cameras.filter((c) => !/desk view/i.test(c.label));
 
-/** The last camera chosen here, or else an iPhone, or else whatever is first. */
+export const isIphone = (camera) => /iphone/i.test(camera?.label || '');
+
+/**
+ * An iPhone whenever one is connected (the last one chosen, if there are several), since it films sharper and
+ * smoother than a laptop camera. Otherwise the last camera chosen here, or whatever is first. A laptop camera
+ * picked once is not remembered over an iPhone that turns up later; it can still be picked for one session.
+ */
 export function preferredCamera(cameras, savedId) {
-  return cameras.find((c) => c.id === savedId) || cameras.find((c) => /iphone/i.test(c.label)) || cameras[0] || null;
+  const saved = cameras.find((c) => c.id === savedId);
+  const iphones = cameras.filter(isIphone);
+  if (iphones.length) return iphones.find((c) => c.id === savedId) || iphones[0];
+  return saved || cameras[0] || null;
 }
 
 export function stopStream(stream) {
