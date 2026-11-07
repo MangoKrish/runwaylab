@@ -11,6 +11,7 @@ import { totalScore, gradeFor } from '../lib/score.mjs';
 import { generateSampleRaw, SAMPLE_JUDGE } from '../lib/sampleWalk.mjs';
 import { makeStills } from '../judge/stills.mjs';
 import { judgeStatus, requestJudgement } from '../judge/client.mjs';
+import { expectedSeconds, rememberSeconds, progressAt, timeLeftText } from '../judge/eta.mjs';
 import { saveWalk, loadWalk, deleteWalk } from '../store/db.mjs';
 import { postToWall, removeFromWall, signIn, signOut, wallInfo } from '../wall/client.mjs';
 
@@ -204,30 +205,79 @@ export function reviewScreen(root, app, id) {
     else renderAll();
   }
 
+  // While judging, a timer moves the bar in place, so the rest of the page is not rebuilt every second.
+  let judgeTicker = null;
+  function tickJudge() {
+    const bar = summary.querySelector('.rw-judging progress');
+    const stage = summary.querySelector('.rw-judging__stage');
+    const left = summary.querySelector('.rw-judging__left');
+    if (!bar || !stage || !left) return;
+    const s = judgeState;
+    if (s.kind === 'preparing') {
+      bar.value = 0.1 * (s.total ? s.done / s.total : 0);
+      stage.textContent = 'Picking stills and pixelating faces';
+      left.textContent = s.total ? `${s.done} of ${s.total} stills ready` : 'Reading the video';
+    } else if (s.kind === 'sending') {
+      const elapsed = (performance.now() - s.started) / 1000;
+      bar.value = 0.1 + 0.9 * progressAt(elapsed, s.expected);
+      stage.textContent = 'Gemini is looking at your walk';
+      left.textContent = timeLeftText(elapsed, s.expected);
+    }
+  }
+  function startTicker() {
+    if (!judgeTicker) judgeTicker = setInterval(() => (alive && (judgeState.kind === 'preparing' || judgeState.kind === 'sending') ? tickJudge() : stopTicker()), 250);
+  }
+  function stopTicker() {
+    clearInterval(judgeTicker);
+    judgeTicker = null;
+  }
+
+  function cancelJudge() {
+    judgeRun?.abort();
+    judgeRun = null;
+    stopTicker();
+    judgeState = { kind: 'failed', message: 'You cancelled it. Your measured score stands.' };
+    renderAll();
+  }
+
   async function runJudge() {
     judgeRun?.abort();
     const run = new AbortController();
     judgeRun = run;
-    judgeState = { kind: 'preparing' };
+    const began = performance.now();
+    judgeState = { kind: 'preparing', done: 0, total: 0 };
     renderSummary();
     renderActions();
     renderWall();
+    startTicker();
     try {
       if (!session.stills?.length) {
-        session.stills = await makeStills(session.blob, session.analysis, { signal: run.signal, rotation: session.rotation });
+        session.stills = await makeStills(session.blob, session.analysis, {
+          signal: run.signal,
+          rotation: session.rotation,
+          onProgress: (done, total) => {
+            if (run !== judgeRun) return;
+            judgeState = { kind: 'preparing', done, total };
+            tickJudge();
+          },
+        });
         if (run !== judgeRun || !alive) return;
+        console.info(`[judge] ${session.stills.length} stills ready in ${((performance.now() - began) / 1000).toFixed(1)} s`);
       }
       if (!session.stills.length) {
         judgeState = { kind: 'failed', message: 'No frame had the head clearly located, so there were no safe stills to send.' };
         renderAll();
         return;
       }
-      judgeState = { kind: 'sending' };
+      judgeState = { kind: 'sending', started: performance.now(), expected: expectedSeconds() };
       renderSummary();
       renderDetails();
       const answer = await requestJudgement({ stills: session.stills, analysis: session.analysis }, run.signal);
       if (run !== judgeRun || !alive) return;
+      const took = (performance.now() - judgeState.started) / 1000;
+      console.info(`[judge] ${answer.ok ? `answered by ${answer.model}` : `no answer (${answer.code})`} after ${took.toFixed(1)} s`);
       if (answer.ok) {
+        rememberSeconds(took);
         session.judge = answer;
         session.dirty = true;
         judgeState = { kind: 'done' };
@@ -242,6 +292,8 @@ export function reviewScreen(root, app, id) {
       console.error(err);
       judgeState = { kind: 'failed', message: err?.message || 'The stills could not be prepared.' };
       renderAll();
+    } finally {
+      if (run === judgeRun && judgeState.kind !== 'preparing' && judgeState.kind !== 'sending') stopTicker();
     }
   }
 
@@ -266,9 +318,16 @@ export function reviewScreen(root, app, id) {
   function judgePrompt() {
     switch (judgeState.kind) {
       case 'preparing':
-        return h('p', { class: 'rw-working' }, 'Picking stills and pixelating faces.');
-      case 'sending':
-        return h('p', { class: 'rw-working' }, 'The judge is looking at your walk. This can take half a minute.');
+      case 'sending': {
+        const block = h('div', { class: 'rw-judging' },
+          h('div', { class: 'rw-judging__head' },
+            h('p', { class: 'rw-judging__stage rw-working' }),
+            button('Cancel', cancelJudge, { kind: 'quiet' })),
+          h('progress', { max: 1, value: 0, 'aria-label': 'Judging progress' }),
+          h('p', { class: 'rw-judging__left rw-muted rw-small' }));
+        queueMicrotask(tickJudge);
+        return block;
+      }
       case 'failed':
         return h('div', { class: 'rw-stack' },
           h('p', { class: 'rw-error', role: 'alert' }, `No judgment this time. ${judgeState.message}`),

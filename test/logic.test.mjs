@@ -1057,3 +1057,15 @@ test('small movements: a slightly dropped head or shifted shoulders changes the 
   const tilted = measure((lm) => { lm[LM.L_SHOULDER].y -= 0.004; lm[LM.R_SHOULDER].y += 0.004; });
   assert.ok(tilted.shoulderLevel.value > base.shoulderLevel.value + 0.5, `shoulder level ${base.shoulderLevel.value} to ${tilted.shoulderLevel.value}`);
 });
+
+test('judging estimate: learns from this device, and never claims to be done early', async () => {
+  const { expectedSeconds, progressAt, timeLeftText, DEFAULT_SECONDS } = await import('../src/judge/eta.mjs');
+  assert.equal(expectedSeconds([]), DEFAULT_SECONDS);
+  assert.equal(expectedSeconds([10, 30, 12]), 12, 'the median, so one slow answer does not dominate');
+  assert.equal(expectedSeconds([200]), 60, 'capped');
+  assert.equal(progressAt(5, 10), 0.45);
+  assert.ok(progressAt(10, 10) <= 0.9 && progressAt(100, 10) < 0.99, 'never reaches the end before the answer');
+  assert.ok(progressAt(20, 10) > progressAt(15, 10), 'still moving after the estimate');
+  assert.equal(timeLeftText(3, 10), 'About 7 seconds left');
+  assert.match(timeLeftText(30, 10), /Slower than usual \(30 s\)/);
+});

@@ -61,7 +61,7 @@ function pixelate(ctx, cx, cy, r) {
 }
 
 /** @returns {Promise<{t:number, dataUrl:string}[]>} JPEG stills in time order. */
-export async function makeStills(blob, analysis, { signal, count = 12, rotation = 0 } = {}) {
+export async function makeStills(blob, analysis, { signal, count = 12, rotation = 0, onProgress = null } = {}) {
   const chosen = chooseStillFrames(analysis, count);
   if (!chosen.length) return [];
   const opened = await openVideo(blob, signal);
@@ -81,6 +81,7 @@ export async function makeStills(blob, analysis, { signal, count = 12, rotation 
       const head = headCircle(frame.pts);
       pixelate(ctx, (head.cx - box.x) * scale, (head.cy - box.y) * scale, head.r * scale);
       stills.push({ t: frame.t, dataUrl: canvas.toDataURL('image/jpeg', 0.78) });
+      onProgress?.(stills.length, chosen.length);
     }
     return stills;
   } finally {

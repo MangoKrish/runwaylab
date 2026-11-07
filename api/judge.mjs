@@ -1,10 +1,15 @@
 // The Gemini judge. This one file runs on Vercel in production and under `npm run dev` locally.
-// The key lives only here on the server. Secrets: GEMINI_API_KEY. Optional: GEMINI_MODEL, GEMINI_PAID_TIER=1.
+// The key lives only here on the server. Secrets: GEMINI_API_KEY. Optional: GEMINI_MODEL, GEMINI_PAID_TIER=1,
+// GEMINI_THINKING and GEMINI_MEDIA_RESOLUTION (set either to "default" to leave the choice to Google).
 import { PROFILES } from './_profiles.mjs';
 import { json, refuse, sameSite, signJudge } from './_common.mjs';
 
 const API_BASE = () => process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
 const MODEL = () => process.env.GEMINI_MODEL || 'gemini-3.6-flash'; // Badged Stable when checked, 7 November 2026.
+// How long the model reasons before answering, which is most of the wait. Google's default for 3.6 Flash is medium.
+const THINKING = () => process.env.GEMINI_THINKING || 'low';
+// How many tokens each still becomes. Google's default for Gemini 3 is 1,120 per image; medium is 560.
+const MEDIA_RESOLUTION = () => process.env.GEMINI_MEDIA_RESOLUTION || 'medium';
 const MAX_STILLS = 16;
 const MAX_STILL_BASE64 = 700_000;
 const MAX_NOTE_CHARS = 400;
@@ -120,7 +125,7 @@ const FALLBACK_MODELS = 'gemini-3.8-flash,gemini-3.7-flash,gemini-3.5-flash';
 const ATTEMPT_MS = () => Number(process.env.GEMINI_TIMEOUT_MS ?? 40000);
 const TOTAL_MS = 100000;
 
-async function askWithRetries(stills, measurements, key, ask) {
+async function askWithRetries(stills, measurements, key, ask, trace) {
   const wait = Number(process.env.GEMINI_RETRY_MS ?? 1500);
   const others = (process.env.GEMINI_FALLBACK_MODEL ?? FALLBACK_MODELS).split(',').map((m) => m.trim()).filter((m) => m && m !== MODEL());
   const attempts = [MODEL(), MODEL(), ...others];
@@ -136,7 +141,7 @@ async function askWithRetries(stills, measurements, key, ask) {
     if (res?.status === 503) await new Promise((r) => setTimeout(r, wait));
     model = attempts[i];
     try {
-      res = await ask(stills, measurements, key, model, AbortSignal.timeout(Math.min(ATTEMPT_MS(), left)));
+      res = await ask(stills, measurements, key, model, AbortSignal.timeout(Math.min(ATTEMPT_MS(), left)), trace);
     } catch (err) {
       if (err?.name !== 'TimeoutError') throw err;
       // Hanging once means asking the same model again would likely waste the wait, so move on.
@@ -162,29 +167,63 @@ async function isDailyLimit(res) {
   return !!failure?.violations?.some((v) => /PerDay/i.test(v.quotaId ?? ''));
 }
 
-async function askInEitherFormat(stills, measurements, key, model, signal) {
+async function askInEitherFormat(stills, measurements, key, model, signal, trace) {
   // The documented REST form uses responseFormat. Its SDK examples use the other two field names, and
   // the docs do not explain the difference, so fall back once if the API rejects the first form.
-  const res = await callGemini(stills, measurements, key, model, { responseFormat: { text: { mimeType: 'APPLICATION_JSON', schema: SCHEMA } } }, signal);
+  const res = await callGemini(stills, measurements, key, model, { responseFormat: { text: { mimeType: 'APPLICATION_JSON', schema: SCHEMA } } }, signal, trace);
   if (res.status !== 400) return res;
-  return callGemini(stills, measurements, key, model, { responseMimeType: 'application/json', responseJsonSchema: SCHEMA }, signal);
+  const other = { responseMimeType: 'application/json', responseJsonSchema: SCHEMA };
+  const second = await callGemini(stills, measurements, key, model, other, signal, trace);
+  if (second.status !== 400) return second;
+  // A model that does not take one of the speed settings still gets asked, just more slowly.
+  return callGemini(stills, measurements, key, model, { ...other, plain: true }, signal, trace);
 }
 
-async function callGemini(stills, measurements, key, model, formatConfig, signal) {
-  return fetch(`${API_BASE()}/models/${model}:generateContent`, {
-    method: 'POST',
-    signal,
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          ...stills.map((s) => ({ inline_data: { mime_type: 'image/jpeg', data: s.jpeg } })),
-          { text: PROMPT(measurements, stills.length) },
-        ],
-      }],
-      generationConfig: { temperature: 0.4, ...formatConfig },
-    }),
-  });
+/** The speed settings, left out when set to "default". Temperature is gone: Google ignores it from 3.6 Flash on. */
+function speedConfig() {
+  const out = {};
+  if (THINKING() !== 'default') out.thinkingConfig = { thinkingLevel: THINKING() };
+  if (MEDIA_RESOLUTION() !== 'default') out.mediaResolution = `MEDIA_RESOLUTION_${MEDIA_RESOLUTION().toUpperCase()}`;
+  return out;
+}
+
+async function callGemini(stills, measurements, key, model, { plain = false, ...formatConfig }, signal, trace) {
+  const started = Date.now();
+  try {
+    const res = await fetch(`${API_BASE()}/models/${model}:generateContent`, {
+      method: 'POST',
+      signal,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            ...stills.map((s) => ({ inline_data: { mime_type: 'image/jpeg', data: s.jpeg } })),
+            { text: PROMPT(measurements, stills.length) },
+          ],
+        }],
+        generationConfig: { ...(plain ? {} : speedConfig()), ...formatConfig },
+      }),
+    });
+    trace?.attempts.push({ model, status: res.status, ms: Date.now() - started });
+    return res;
+  } catch (err) {
+    trace?.attempts.push({ model, status: err?.name === 'TimeoutError' ? 'timed out' : 'failed', ms: Date.now() - started });
+    throw err;
+  }
+}
+
+const seconds = (ms) => `${(ms / 1000).toFixed(1)} s`;
+
+/**
+ * One line per judgment in the server's log: how long each call took, which model answered, and how many tokens
+ * went in and came out. It never includes the stills, the measurements or what Gemini wrote.
+ */
+function logJudgment(trace, status, code, usage) {
+  if (process.env.RUNWAYLAB_JUDGE_LOG === '0') return;
+  const calls = trace.attempts.map((a) => `${a.model} ${a.status} in ${seconds(a.ms)}`).join(', ') || 'no call';
+  const images = usage?.promptTokensDetails?.find((d) => d.modality === 'IMAGE')?.tokenCount;
+  const tokens = usage ? ` · tokens: ${usage.promptTokenCount ?? '?'} in${images ? ` (${images} for images)` : ''}, ${usage.thoughtsTokenCount ?? 0} thinking, ${usage.candidatesTokenCount ?? '?'} out` : '';
+  console.log(`[judge] ${status} ${code} in ${seconds(Date.now() - trace.started)} · ${trace.stills} stills, ${trace.kb} KB · thinking ${THINKING()}, images ${MEDIA_RESOLUTION()} · ${calls}${tokens}`);
 }
 
 /** Tells the page whether a judge is connected, and which data terms apply. Does not reveal the key. */
@@ -206,45 +245,53 @@ export async function POST(request) {
   const problem = checkStills(body?.stills);
   if (problem) return refuse(400, 'bad_request', problem);
   const measurements = cleanMeasurements(body.measurements);
+  const trace = { started: Date.now(), attempts: [], stills: body.stills.length, kb: Math.round(body.stills.reduce((sum, s) => sum + s.jpeg.length * 0.75, 0) / 1024) };
+  let usage = null;
+  const fail = (status, code, message) => {
+    logJudgment(trace, status, code, usage);
+    return refuse(status, code, message);
+  };
 
   let res;
   let usedModel;
   try {
-    ({ res, model: usedModel } = await askWithRetries(body.stills, measurements, key, askInEitherFormat));
+    ({ res, model: usedModel } = await askWithRetries(body.stills, measurements, key, askInEitherFormat, trace));
   } catch {
-    return refuse(502, 'unreachable', 'The server could not reach Gemini. Try again.');
+    return fail(502, 'unreachable', 'The server could not reach Gemini. Try again.');
   }
 
-  if (res.status === 503) return refuse(503, 'busy', 'Gemini is very busy right now. Wait a moment and try again.');
+  if (res.status === 503) return fail(503, 'busy', 'Gemini is very busy right now. Wait a moment and try again.');
   if (res.status === 429) {
-    if (await isDailyLimit(res)) return refuse(429, 'out_of_quota', 'The judge has used all of today\'s requests, so this walk keeps its measured score. More become available at midnight Pacific time.');
-    return refuse(429, 'rate_limited', 'The judge is at its request limit. Wait a minute and try again.');
+    if (await isDailyLimit(res)) return fail(429, 'out_of_quota', 'The judge has used all of today\'s requests, so this walk keeps its measured score. More become available at midnight Pacific time.');
+    return fail(429, 'rate_limited', 'The judge is at its request limit. Wait a minute and try again.');
   }
-  if (res.status === 401 || res.status === 403) return refuse(502, 'bad_key', 'Gemini rejected this server\'s API key.');
-  if (res.status === 404) return refuse(502, 'bad_model', `Gemini does not recognise the model "${MODEL()}".`);
-  if (!res.ok) return refuse(502, 'upstream', `Gemini returned an error (${res.status}). Try again.`);
+  if (res.status === 401 || res.status === 403) return fail(502, 'bad_key', 'Gemini rejected this server\'s API key.');
+  if (res.status === 404) return fail(502, 'bad_model', `Gemini does not recognise the model "${MODEL()}".`);
+  if (!res.ok) return fail(502, 'upstream', `Gemini returned an error (${res.status}). Try again.`);
 
   const reply = await res.json().catch(() => null);
-  if (reply?.promptFeedback?.blockReason) return refuse(422, 'blocked', 'Gemini declined to judge these stills.');
+  usage = reply?.usageMetadata ?? null;
+  if (reply?.promptFeedback?.blockReason) return fail(422, 'blocked', 'Gemini declined to judge these stills.');
   const candidate = reply?.candidates?.[0];
   const text = candidate?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
   if (!text) {
     return candidate?.finishReason && candidate.finishReason !== 'STOP'
-      ? refuse(422, 'blocked', 'Gemini declined to judge these stills.')
-      : refuse(502, 'bad_answer', 'Gemini gave an empty answer. Try again.');
+      ? fail(422, 'blocked', 'Gemini declined to judge these stills.')
+      : fail(502, 'bad_answer', 'Gemini gave an empty answer. Try again.');
   }
 
   let parsed;
   try {
     parsed = JSON.parse(text);
   } catch {
-    return refuse(502, 'bad_answer', 'Gemini gave an answer that could not be read. Try again.');
+    return fail(502, 'bad_answer', 'Gemini gave an answer that could not be read. Try again.');
   }
   const answer = checkAnswer(parsed, body.stills.length);
-  if (!answer) return refuse(502, 'bad_answer', 'Gemini gave an answer that did not fit. Try again.');
-  if (!answer.judgeable) return refuse(422, 'not_judgeable', 'Gemini could not see a person in these stills.');
+  if (!answer) return fail(502, 'bad_answer', 'Gemini gave an answer that did not fit. Try again.');
+  if (!answer.judgeable) return fail(422, 'not_judgeable', 'Gemini could not see a person in these stills.');
 
   const { judgeable, ...result } = answer;
+  logJudgment(trace, 200, 'ok', usage);
   // The signature is what lets the wall trust this result later without asking Gemini again.
   return json(200, { ok: true, model: usedModel, ...result, sig: signJudge(result) });
 }

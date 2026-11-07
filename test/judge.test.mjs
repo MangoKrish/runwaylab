@@ -5,6 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 
+process.env.RUNWAYLAB_JUDGE_LOG = '0';
 const { GET, POST, checkAnswer } = await import('../api/judge.mjs');
 const { checkUploadBasics, MAX_UPLOAD_BYTES } = await import('../src/capture/upload.mjs');
 
@@ -88,6 +89,9 @@ test('the request has images first, the key in a header, and only known measurem
   assert.ok(!parts.at(-1).text.includes('dropped'));
   assert.equal(lastRequest.body.generationConfig.responseFormat.text.mimeType, 'APPLICATION_JSON');
   assert.deepEqual(lastRequest.body.generationConfig.responseFormat.text.schema.properties.presence.maximum, 15);
+  assert.equal(lastRequest.body.generationConfig.thinkingConfig.thinkingLevel, 'low', 'thinking is most of the wait');
+  assert.equal(lastRequest.body.generationConfig.mediaResolution, 'MEDIA_RESOLUTION_MEDIUM');
+  assert.equal(lastRequest.body.generationConfig.temperature, undefined, 'ignored by 3.6 Flash, refused by later models');
 });
 
 test('the prompt forbids judging bodies and identifying people', async () => {
@@ -107,6 +111,14 @@ test('falls back to the other schema field names once if the first form is rejec
   assert.equal(res.status, 200);
   assert.equal(lastRequest.body.generationConfig.responseMimeType, 'application/json');
   assert.ok(lastRequest.body.generationConfig.responseJsonSchema);
+});
+
+test('if the speed settings are refused, it asks once more without them', async () => {
+  setEnv();
+  reply = (req) => (req.body.generationConfig.thinkingConfig ? { status: 400, body: {} } : textReply(GOOD));
+  const res = await call(goodBody);
+  assert.equal(res.status, 200);
+  assert.equal(lastRequest.body.generationConfig.mediaResolution, undefined);
 });
 
 const failures = [
