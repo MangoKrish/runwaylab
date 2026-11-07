@@ -39,7 +39,7 @@ const res = await POST(new Request('http://localhost/api/judge', {
   headers: { 'content-type': 'application/json', host: 'localhost' },
   body: JSON.stringify({
     stills: [{ t: 0, jpeg: fs.readFileSync(image).toString('base64') }],
-    measurements: { shoulderLineDeg: 1.2, torsoSpreadShoulderWidths: 0.6, headMovementShoulderWidths: 0.2, trunkTiltDeg: 1.5, measuredPoints: 40 },
+    measurements: { footPlacementPercentOfHeight: 4.2, shoulderRockDegrees: 1.2, trunkSwayDegrees: 1.5, straightLinePercentOfHeight: 3.4, headMovementPercentOfHeight: 1.8 },
   }),
 }));
 const body = await res.json();

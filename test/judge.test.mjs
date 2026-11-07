@@ -20,12 +20,16 @@ const fake = http.createServer((req, res) => {
     requests++;
     lastRequest = { url: req.url, headers: req.headers, body: JSON.parse(Buffer.concat(chunks).toString()) };
     const r = typeof reply === 'function' ? reply(lastRequest) : reply;
+    if (r.hang) return;
     res.writeHead(r.status ?? 200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(r.body));
   });
 });
 await new Promise((resolve) => fake.listen(0, '127.0.0.1', resolve));
-test.after(() => fake.close());
+test.after(() => {
+  fake.closeAllConnections();
+  fake.close();
+});
 
 function setEnv(key = 'test-key') {
   process.env.GEMINI_BASE_URL = `http://127.0.0.1:${fake.address().port}`;
@@ -36,7 +40,7 @@ function setEnv(key = 'test-key') {
 
 const textReply = (obj) => ({ body: { candidates: [{ content: { parts: [{ text: JSON.stringify(obj) }] }, finishReason: 'STOP' }] } });
 const call = (body, headers = { host: 'x.test' }) => POST(new Request('http://x.test/api/judge', { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) }));
-const goodBody = { stills: [{ t: 1, jpeg: 'AAAA' }, { t: 2, jpeg: 'BBBB' }], measurements: { shoulderLineDeg: 1.2, secret: 'dropped' } };
+const goodBody = { stills: [{ t: 1, jpeg: 'AAAA' }, { t: 2, jpeg: 'BBBB' }], measurements: { shoulderRockDegrees: 1.2, measuredPoints: 60, secret: 'dropped' } };
 
 test('GET reports whether a judge is connected, never the key', async () => {
   setEnv();
@@ -79,7 +83,8 @@ test('the request has images first, the key in a header, and only known measurem
   const { parts } = lastRequest.body.contents[0];
   assert.equal(parts[0].inline_data.mime_type, 'image/jpeg');
   assert.equal(parts[0].inline_data.data, 'AAAA');
-  assert.ok(parts.at(-1).text.includes('shoulderLineDeg'));
+  assert.ok(parts.at(-1).text.includes('shoulderRockDegrees'));
+  assert.ok(!parts.at(-1).text.includes('measuredPoints'), 'the measured score is not shown to the judge, so it cannot lean on it');
   assert.ok(!parts.at(-1).text.includes('dropped'));
   assert.equal(lastRequest.body.generationConfig.responseFormat.text.mimeType, 'APPLICATION_JSON');
   assert.deepEqual(lastRequest.body.generationConfig.responseFormat.text.schema.properties.presence.maximum, 15);
@@ -173,6 +178,22 @@ test('a model out of quota is not retried, and the next model answers', async ()
   const res = await call(goodBody);
   assert.equal(res.status, 200);
   assert.equal(urls.filter((u) => u.includes('gemini-3.6-flash')).length, 1, 'retrying the same model would only fail again');
+  assert.equal((await res.json()).model, 'gemini-3.8-flash');
+});
+
+test('a model that hangs is given up on, and the next one answers', async () => {
+  setEnv();
+  process.env.GEMINI_RETRY_MS = '1';
+  process.env.GEMINI_TIMEOUT_MS = '60';
+  const urls = [];
+  reply = (req) => {
+    urls.push(req.url);
+    return req.url.includes('gemini-3.6-flash') ? { hang: true } : textReply(GOOD);
+  };
+  const res = await call(goodBody);
+  delete process.env.GEMINI_TIMEOUT_MS;
+  assert.equal(res.status, 200);
+  assert.equal(urls.filter((u) => u.includes('gemini-3.6-flash')).length, 1, 'not asked a second time');
   assert.equal((await res.json()).model, 'gemini-3.8-flash');
 });
 

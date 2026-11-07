@@ -32,11 +32,11 @@ export async function requestJudgement({ stills, analysis }, signal) {
       body: JSON.stringify({
         stills: stills.map((s) => ({ t: s.t, jpeg: s.dataUrl.split(',')[1] })),
         measurements: {
-          shoulderLineDeg: number(analysis.metrics.shoulderLine),
-          torsoSpreadShoulderWidths: number(analysis.metrics.torsoSpread),
-          headMovementShoulderWidths: number(analysis.metrics.headMovement),
-          trunkTiltDeg: number(analysis.metrics.trunkInclination),
-          measuredPoints: analysis.measured.ok ? analysis.measured.points : null,
+          footPlacementPercentOfHeight: number(analysis.metrics.footLine),
+          shoulderRockDegrees: number(analysis.metrics.shoulderSway),
+          trunkSwayDegrees: number(analysis.metrics.trunkSway),
+          straightLinePercentOfHeight: number(analysis.metrics.torsoSpread),
+          headMovementPercentOfHeight: number(analysis.metrics.headMovement),
         },
       }),
     });

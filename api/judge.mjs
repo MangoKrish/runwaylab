@@ -35,7 +35,7 @@ Rules you must follow:
 - Judge choices and movement only. Never mention, rate or infer body shape, size, weight, height, face, attractiveness, age, race, ethnicity, gender, religion, health or disability.
 - If someone uses a mobility aid, judge their presence and style exactly as you would anyone's, and do not remark on it.
 - Do not try to work out who the person is.
-- Do not state numbers about their posture or an overall score. Code measured the following and handles all of that. They are for your context only: ${JSON.stringify(measurements)}.
+- Do not state numbers about their posture or an overall score. Code measured the following and handles all of that, and they are not part of your scores. They are for your context only: ${JSON.stringify(measurements)}.
 - Code has already confirmed that this person walked up and back, so judge what you can see, even if a still catches them mid-turn or standing. Set judgeable to false only if no person is visible at all, and then still fill the other fields with zeros and short placeholders.
 
 Walks to choose from:
@@ -102,7 +102,7 @@ function checkStills(stills) {
 
 function cleanMeasurements(input) {
   const out = {};
-  for (const key of ['shoulderLineDeg', 'torsoSpreadShoulderWidths', 'headMovementShoulderWidths', 'trunkTiltDeg', 'measuredPoints']) {
+  for (const key of ['footPlacementPercentOfHeight', 'shoulderRockDegrees', 'trunkSwayDegrees', 'straightLinePercentOfHeight', 'headMovementPercentOfHeight']) {
     if (Number.isFinite(input?.[key])) out[key] = input[key];
   }
   return out;
@@ -115,6 +115,10 @@ function cleanMeasurements(input) {
  * model has its own allowance.
  */
 const FALLBACK_MODELS = 'gemini-3.8-flash,gemini-3.7-flash,gemini-3.5-flash';
+// A model can hang for minutes instead of answering. Good answers take 8 to 27 s, so give each model 40, and stop
+// before the page gives up at 120.
+const ATTEMPT_MS = () => Number(process.env.GEMINI_TIMEOUT_MS ?? 40000);
+const TOTAL_MS = 100000;
 
 async function askWithRetries(stills, measurements, key, ask) {
   const wait = Number(process.env.GEMINI_RETRY_MS ?? 1500);
@@ -124,11 +128,23 @@ async function askWithRetries(stills, measurements, key, ask) {
   let res = null;
   let busy = null;
   let model = MODEL();
+  const started = Date.now();
   for (let i = 0; i < attempts.length; i++) {
+    const left = TOTAL_MS - (Date.now() - started);
+    if (left <= 0) break;
     if (usedUp.has(attempts[i])) continue;
     if (res?.status === 503) await new Promise((r) => setTimeout(r, wait));
     model = attempts[i];
-    res = await ask(stills, measurements, key, model);
+    try {
+      res = await ask(stills, measurements, key, model, AbortSignal.timeout(Math.min(ATTEMPT_MS(), left)));
+    } catch (err) {
+      if (err?.name !== 'TimeoutError') throw err;
+      // Hanging once means asking the same model again would likely waste the wait, so move on.
+      usedUp.add(model);
+      res = new Response(null, { status: 503 });
+      busy = res;
+      continue;
+    }
     // Quota is counted per model, so one that has run out says nothing about the next.
     if (res.status === 429) usedUp.add(model);
     else if (res.status === 503) busy = res;
@@ -146,17 +162,18 @@ async function isDailyLimit(res) {
   return !!failure?.violations?.some((v) => /PerDay/i.test(v.quotaId ?? ''));
 }
 
-async function askInEitherFormat(stills, measurements, key, model) {
+async function askInEitherFormat(stills, measurements, key, model, signal) {
   // The documented REST form uses responseFormat. Its SDK examples use the other two field names, and
   // the docs do not explain the difference, so fall back once if the API rejects the first form.
-  const res = await callGemini(stills, measurements, key, model, { responseFormat: { text: { mimeType: 'APPLICATION_JSON', schema: SCHEMA } } });
+  const res = await callGemini(stills, measurements, key, model, { responseFormat: { text: { mimeType: 'APPLICATION_JSON', schema: SCHEMA } } }, signal);
   if (res.status !== 400) return res;
-  return callGemini(stills, measurements, key, model, { responseMimeType: 'application/json', responseJsonSchema: SCHEMA });
+  return callGemini(stills, measurements, key, model, { responseMimeType: 'application/json', responseJsonSchema: SCHEMA }, signal);
 }
 
-async function callGemini(stills, measurements, key, model, formatConfig) {
+async function callGemini(stills, measurements, key, model, formatConfig, signal) {
   return fetch(`${API_BASE()}/models/${model}:generateContent`, {
     method: 'POST',
+    signal,
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
       contents: [{
