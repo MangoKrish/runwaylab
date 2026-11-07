@@ -25,18 +25,28 @@ function explain(err) {
   }
 }
 
-/** Ask for the best format a camera has. These are preferences, so a lesser camera still works. */
+/**
+ * First choice: at least 50 frames a second, at up to 1080p. Smooth frames time each step more precisely and blur
+ * the feet less, and the tracker only needs about 256 pixels of the body, so speed beats resolution here. Asked as
+ * "ideal", a camera that cannot do both picks resolution and drops to 24 or 30, so the minimum is what makes it count.
+ */
+export const SMOOTH_VIDEO = { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { min: 50, ideal: 60 } };
+/** Fallback for cameras with no 50 fps mode. These are preferences, so a lesser camera still works. */
 export const BEST_VIDEO = { width: { ideal: 1920 }, height: { ideal: 1440 }, frameRate: { ideal: 60 } };
 
 export async function openCamera(deviceId) {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new CameraError('unsupported', 'This browser cannot use a camera on this page. Cameras need https or localhost, and a recent browser.');
   }
+  const ask = (format) => navigator.mediaDevices.getUserMedia({ audio: false, video: { ...(deviceId ? { deviceId: { exact: deviceId } } : {}), ...format } });
   try {
-    return await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: { ...(deviceId ? { deviceId: { exact: deviceId } } : {}), ...BEST_VIDEO },
-    });
+    return await ask(SMOOTH_VIDEO);
+  } catch (err) {
+    // Only a camera without a fast mode gets the fallback. Other errors (permission, busy) are real answers.
+    if (err?.name !== 'OverconstrainedError' || err?.constraint !== 'frameRate') throw explain(err);
+  }
+  try {
+    return await ask(BEST_VIDEO);
   } catch (err) {
     throw explain(err);
   }

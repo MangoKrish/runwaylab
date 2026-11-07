@@ -73,6 +73,9 @@ export async function openHeadless(clips = [], { port = 4778 } = {}) {
   for (let i = 0; i < 100 && !(await evaluate('window.ready === true').catch(() => false)); i++) await sleep(100);
 
   return {
+    /** Runs an expression in the page and returns its value. */
+    evaluate,
+
     /** Runs the app's real tracker on clip number i. */
     analyze: (i, hz = 60, rotation = 0) => evaluate(`analyze(${JSON.stringify(clipUrls[i])}, ${hz}, ${rotation})`),
 

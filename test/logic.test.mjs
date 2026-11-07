@@ -777,9 +777,11 @@ test('rtmpose person choice: follows overlap, or starts with someone large and c
 });
 
 // ── camera choice ──
-const { usableCameras, preferredCamera, recordingBitrate, BEST_VIDEO } = await import('../src/capture/camera.mjs');
+const { usableCameras, preferredCamera, recordingBitrate, BEST_VIDEO, SMOOTH_VIDEO } = await import('../src/capture/camera.mjs');
 
-test('cameras: asks for the iPhone 17 Pro best format', () => {
+test('cameras: insists on 50+ fps first, and falls back to the best picture', () => {
+  assert.deepEqual(SMOOTH_VIDEO.frameRate, { min: 50, ideal: 60 }, 'a minimum, so the camera cannot trade it away');
+  assert.equal(SMOOTH_VIDEO.height.ideal, 1080);
   assert.deepEqual(BEST_VIDEO, { width: { ideal: 1920 }, height: { ideal: 1440 }, frameRate: { ideal: 60 } });
 });
 
