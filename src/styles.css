@@ -391,6 +391,16 @@
   /* the pill is 36 px to look small; its hit area is still 44 px */
   .rw-top__nav a.rw-top__cta:not([aria-current='page'])::before { content: ''; position: absolute; inset: -4px 0; }
 
+  /* sign in / out, last in the nav */
+  .rw-top__account { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+  .rw-top__account[hidden] { display: none; }
+  .rw-top__who { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-3); font-size: var(--t-small); }
+  .rw-top__auth { position: relative; min-height: 36px; padding: 6px 14px; border: 1px solid var(--hair-strong); border-radius: var(--r-full); background: transparent; color: var(--ink); font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer; transition: background-color var(--d-short) var(--ease-out), border-color var(--d-short) var(--ease-out); }
+  .rw-top__auth::before { content: ''; position: absolute; inset: -4px 0; }
+  .rw-top__auth:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .rw-app[data-route='home'] .rw-top__who { color: var(--stage-ink-2); }
+  .rw-app[data-route='home'] .rw-top__auth { color: var(--stage-ink); border-color: color-mix(in srgb, var(--stage-ink) 35%, transparent); }
+
   /* home: the header sits over the hero, in stage colours */
   .rw-app[data-route='home'] .rw-top { position: absolute; top: 0; left: 0; right: 0; z-index: 3; width: 100%; max-width: calc(var(--container) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); --focus: var(--stage-ink); }
   .rw-app[data-route='home'] .rw-brand { color: var(--stage-ink); }
@@ -409,6 +419,17 @@
   @media (max-width: 430px) {
     .rw-top__long { display: none; }
     .rw-top__short { display: inline; }
+  }
+  .rw-top__auth { display: inline-flex; flex: none; align-items: center; gap: 6px; }
+  .rw-top__account { flex: none; }
+  .rw-top__person { display: none; width: 20px; height: 20px; }
+  @media (max-width: 560px) {
+    .rw-top__who { display: none; }
+  }
+  @media (max-width: 520px) {
+    .rw-top__authtext { display: none; }
+    .rw-top__person { display: block; }
+    .rw-top__auth { width: 36px; padding: 0; justify-content: center; }
   }
   @media (max-width: 420px) {
     .rw-brand { font-size: 1.0625rem; gap: 8px; }
@@ -498,4 +519,15 @@
     .rw-btn, .rw-card--link, a.rw-row { transition-property: background-color, color, border-color; }
     .rw-card--link:hover, a.rw-row:hover { transform: none; }
   }
+}
+
+/* Phones: with the sign-in button in the header, the nav packs tighter so everything stays on one row. */
+@media (max-width: 430px) {
+  .rw-top__nav:has(.rw-top__account:not([hidden])) { gap: 8px; }
+  .rw-top__nav:has(.rw-top__account:not([hidden])) .rw-top__cta:not([aria-current='page']) { padding: 6px 10px; }
+  .rw-top__auth { width: 32px; min-height: 32px; }
+}
+@media (max-width: 370px) {
+  .rw-top__nav:has(.rw-top__account:not([hidden])) { gap: 6px; }
+  .rw-top__nav:has(.rw-top__account:not([hidden])) .rw-top__cta:not([aria-current='page']) { padding: 6px 8px; }
 }

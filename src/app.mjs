@@ -1,12 +1,13 @@
 // The app shell: a small router over the location hash. Walks being reviewed live in memory, in `sessions`,
 // so a walk is temporary until the person explicitly saves it.
-import { h, clear, artSvg } from './ui/dom.mjs';
+import { h, clear, artSvg, toast } from './ui/dom.mjs';
 import { homeScreen } from './ui/home.mjs';
 import { studioScreen } from './ui/studio.mjs';
 import { reviewScreen } from './ui/review.mjs';
 import { historyScreen } from './ui/history.mjs';
 import { wallScreen, wallWalkScreen } from './ui/wall.mjs';
 import { foxMark } from './ui/fox.mjs';
+import { signIn, signOut, wallInfo } from './wall/client.mjs';
 
 function newId() {
   return crypto.randomUUID?.() ?? `walk-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -35,12 +36,59 @@ function brand() {
   return h('a', { class: 'rw-brand', href: '#/' }, holder, h('span', null, 'RunwayLab'));
 }
 
+/**
+ * Sign in and out from the header, when the server has Auth0 set up. Hidden otherwise. The session is short and the
+ * wall signs people out after posting, so it asks the server again on every page change and when the popup reports.
+ */
+function account() {
+  const el = h('div', { class: 'rw-top__account', hidden: '' });
+  let asking = 0;
+
+  // On phones the words do not fit beside the nav, so the button shows a person and keeps its name for screen readers.
+  function person() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('class', 'rw-top__person');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.innerHTML = '<circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
+    return svg;
+  }
+  const authButton = (text, onClick) => h('button', { type: 'button', class: 'rw-top__auth', 'aria-label': text, onClick },
+    h('span', { class: 'rw-top__authtext', 'aria-hidden': 'true' }, text), person());
+
+  async function refresh() {
+    const n = ++asking;
+    const info = await wallInfo().catch(() => null);
+    if (n !== asking) return;
+    if (!info?.auth) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    if (info.signedIn) {
+      el.replaceChildren(
+        h('span', { class: 'rw-top__who', title: `Signed in as ${info.name || 'you'}` }, info.name || 'Signed in'),
+        authButton('Sign out', async () => { await signOut(); refresh(); }));
+    } else {
+      // signIn opens its popup straight from the click, before anything waits, so browsers allow it.
+      el.replaceChildren(authButton('Sign in', () => signIn().then((result) => {
+        if (!result.ok && result.message) toast(result.message);
+        refresh();
+      })));
+    }
+  }
+  if ('BroadcastChannel' in window) new BroadcastChannel('rw-auth').onmessage = () => refresh();
+  return { el, refresh };
+}
+
 export function start(root, base) {
   const main = h('main', { class: 'rw-screen', id: 'main' });
   const nav = h('nav', { class: 'rw-top__nav', 'aria-label': 'Main' },
     h('a', { class: 'rw-top__cta', href: '#/studio' }, 'New walk'),
     navLink('#/wall', 'The wall', 'Wall'),
     navLink('#/history', 'Saved walks', 'Saved'));
+  const who = account();
+  nav.append(who.el);
   clear(root).append(
     h('header', { class: 'rw-top' }, brand(), nav),
     main,
@@ -97,6 +145,7 @@ export function start(root, base) {
     else if (route === 'wall') current = wallScreen(main, app);
     else current = homeScreen(main, app);
     window.scrollTo(0, 0);
+    who.refresh();
     // Move focus to the new screen's heading, so keyboard and screen reader users land in the right place.
     main.querySelector('h1')?.focus({ preventScroll: true });
   }
