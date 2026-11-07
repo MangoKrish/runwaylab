@@ -5,9 +5,7 @@ why), `direction.md` (the "Lit line" visual system) and `art.md` (the drawn file
 four people implement in parallel. Where the three disagree, this document decides, and it wins. When this spec is
 silent, follow `direction.md`, then `ux.md`.
 
-Legacy stylesheet, for reference while rebuilding page rules:
-`/private/tmp/claude-501/-Users-krishnas--claude-spares-spare-58bnDs/453d30a5-fffe-4659-aa7b-79190d606b1e/scratchpad/redesign/legacy-styles.css`
-(a copy of `src/styles.css` before any change).
+The stylesheet before the redesign is in git history.
 
 ## Contents
 
@@ -786,4 +784,4 @@ Order of work:
 5. Tab through once: every control shows the ring (stage-ink on the stage and dark bands); decorative SVG is
    `aria-hidden`; the stage prompt is still announced through the existing `[role=status]`.
 6. Reduced motion: nothing moves except the hero scene and video; the score shows at once; bars render full.
-7. Be Vietnam Pro only; no external requests; no Claude or Anthropic mention; no commits.
+7. Be Vietnam Pro only; no external requests.

@@ -4,9 +4,7 @@ Art direction for the redesign, 7 November 2026. Everything here is buildable in
 typeface (Be Vietnam Pro 400 / 400 italic / 500 / 600 / 700 in `src/fonts.css`). No other fonts, no CDNs, no external
 images: the CSP in `index.html` allows only `'self'`.
 
-Before screenshots (light and dark, 1440 and 390) are in
-`/private/tmp/claude-501/-Users-krishnas--claude-spares-spare-58bnDs/453d30a5-fffe-4659-aa7b-79190d606b1e/scratchpad/redesign/before-light`
-and `.../before-dark`. The current `src/styles.css` is competent and clean. What it lacks is a concept carried through,
+Before screenshots were taken in light and dark at 1440 and 390 px. The current `src/styles.css` is competent and clean. What it lacks is a concept carried through,
 one type scale instead of two dozen ad hoc sizes, a dark theme that is the stage rather than a flipped light theme,
 one vocabulary for every bar and ribbon, and motion that means something. That is what this document sets.
 
