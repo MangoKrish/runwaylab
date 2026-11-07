@@ -13,7 +13,7 @@ import { makeStills } from '../judge/stills.mjs';
 import { judgeStatus, requestJudgement } from '../judge/client.mjs';
 import { expectedSeconds, rememberSeconds, progressAt, timeLeftText } from '../judge/eta.mjs';
 import { saveWalk, loadWalk, deleteWalk } from '../store/db.mjs';
-import { copyToThisComputer, recordingName } from '../store/keep.mjs';
+import { keepOnDevice, downloadFile } from '../store/keep.mjs';
 import { postToWall, removeFromWall, signIn, signOut, wallInfo } from '../wall/client.mjs';
 
 const STATUS_WORDS = {
@@ -222,22 +222,64 @@ export function reviewScreen(root, app, id) {
 
   // While judging, a timer moves the bar in place, so the rest of the page is not rebuilt every second.
   let judgeTicker = null;
+  // Each step owns a slice of the bar. Every slice but thinking moves on real events: stills made, the server
+  // receiving them, and the characters of Gemini's answer as it writes. Thinking sends nothing, so that slice is
+  // an estimate, and it says so.
+  const EXPECTED_ANSWER_CHARS = 900;
+  const modelName = (id = '') => id.replace(/^gemini-/, 'Gemini ').replace(/-flash-lite$/, ' Flash-Lite').replace(/-flash$/, ' Flash').replace(/-pro$/, ' Pro');
+  function judgePercent(s) {
+    if (s.kind === 'preparing') return 15 * (s.total ? s.done / s.total : 0);
+    if (s.phase === 'uploading') return 15;
+    if (s.phase === 'writing') return 70 + 29 * Math.min(1, s.chars / EXPECTED_ANSWER_CHARS);
+    if (!s.askedAt) return 20;
+    return 20 + 50 * progressAt((performance.now() - s.askedAt) / 1000, s.expected);
+  }
   function tickJudge() {
     const bar = summary.querySelector('.rw-judging progress');
     const stage = summary.querySelector('.rw-judging__stage');
     const left = summary.querySelector('.rw-judging__left');
-    if (!bar || !stage || !left) return;
+    const pct = summary.querySelector('.rw-judging__pct');
+    if (!bar || !stage || !left || !pct) return;
     const s = judgeState;
+    if (s.kind !== 'preparing' && s.kind !== 'sending') return;
+    // Never moves backwards, even when the server switches to another model.
+    s.shown = Math.max(s.shown || 0, judgePercent(s));
+    bar.value = s.shown / 100;
+    pct.textContent = `${Math.floor(s.shown)}%`;
     if (s.kind === 'preparing') {
-      bar.value = 0.1 * (s.total ? s.done / s.total : 0);
       stage.textContent = 'Picking stills and pixelating faces';
-      left.textContent = s.total ? `${s.done} of ${s.total} stills ready` : 'Reading the video';
-    } else if (s.kind === 'sending') {
-      const elapsed = (performance.now() - s.started) / 1000;
-      bar.value = 0.1 + 0.9 * progressAt(elapsed, s.expected);
-      stage.textContent = 'Gemini is looking at your walk';
-      left.textContent = timeLeftText(elapsed, s.expected);
+      left.textContent = s.total ? `${s.done} of ${s.total} stills ready, on this device` : 'Reading the video';
+    } else if (s.phase === 'uploading') {
+      stage.textContent = `Sending ${session.stills.length} stills to the judge`;
+      left.textContent = 'Waiting for the server to receive them';
+    } else if (s.phase === 'writing') {
+      stage.textContent = `${modelName(s.model)} is writing its verdict`;
+      left.textContent = `${s.chars} of about ${EXPECTED_ANSWER_CHARS} characters`;
+    } else {
+      stage.textContent = s.model ? `${modelName(s.model)} is thinking about your walk` : 'The server has your stills';
+      const elapsed = s.askedAt ? (performance.now() - s.askedAt) / 1000 : 0;
+      left.textContent = [s.note, s.askedAt ? `${timeLeftText(elapsed, s.expected)} (an estimate: Gemini says nothing until it starts writing)` : ''].filter(Boolean).join(' ');
     }
+  }
+
+  /** Progress events from the server, while the request is open. */
+  function onJudgeProgress(event) {
+    const s = judgeState;
+    if (s.kind !== 'sending') return;
+    if (event.stage === 'received') s.phase = 'received';
+    if (event.stage === 'asking') {
+      if (event.retry && s.model) s.note = `${modelName(s.model)} was busy or out of requests, so it moved on to ${modelName(event.model)}.`;
+      s.model = event.model;
+      s.phase = 'thinking';
+      s.askedAt = performance.now();
+      s.chars = 0;
+    }
+    if (event.stage === 'writing') {
+      if (s.phase !== 'writing' && s.askedAt) s.thoughtFor = (performance.now() - s.askedAt) / 1000;
+      s.phase = 'writing';
+      s.chars = event.chars;
+    }
+    tickJudge();
   }
   function startTicker() {
     if (!judgeTicker) judgeTicker = setInterval(() => (alive && (judgeState.kind === 'preparing' || judgeState.kind === 'sending') ? tickJudge() : stopTicker()), 250);
@@ -284,15 +326,17 @@ export function reviewScreen(root, app, id) {
         renderAll();
         return;
       }
-      judgeState = { kind: 'sending', started: performance.now(), expected: expectedSeconds() };
+      judgeState = { kind: 'sending', phase: 'uploading', started: performance.now(), expected: expectedSeconds(), shown: 15, chars: 0 };
       renderSummary();
       renderDetails();
-      const answer = await requestJudgement({ stills: session.stills, analysis: session.analysis }, run.signal);
+      const answer = await requestJudgement({ stills: session.stills, analysis: session.analysis }, run.signal, onJudgeProgress);
       if (run !== judgeRun || !alive) return;
       const took = (performance.now() - judgeState.started) / 1000;
+      const thoughtFor = judgeState.thoughtFor;
       console.info(`[judge] ${answer.ok ? `answered by ${answer.model}` : `no answer (${answer.code})`} after ${took.toFixed(1)} s`);
       if (answer.ok) {
-        rememberSeconds(took);
+        // The estimate covers only the silent thinking, since every other step moves on its own.
+        rememberSeconds(thoughtFor ?? took);
         session.judge = answer;
         session.dirty = true;
         judgeState = { kind: 'done' };
@@ -340,6 +384,7 @@ export function reviewScreen(root, app, id) {
         const block = h('div', { class: 'rw-judging' },
           h('div', { class: 'rw-judging__head' },
             h('p', { class: 'rw-judging__stage rw-working' }),
+            h('span', { class: 'rw-judging__pct', 'aria-hidden': 'true' }, '0%'),
             button('Cancel', cancelJudge, { kind: 'quiet' })),
           h('progress', { max: 1, value: 0, 'aria-label': 'Judging progress' }),
           h('p', { class: 'rw-judging__left rw-muted rw-small' }));
@@ -500,12 +545,7 @@ export function reviewScreen(root, app, id) {
       h('div', { class: 'rw-metrics' }, Object.keys(METRIC_INFO).filter((key) => a.metrics[key] && (a.metrics[key].ok || !/Drop|headTilt/.test(key) || a.metrics.calibrated)).map((key) => metricCard({ ...a.metrics[key], key }))),
       stills,
       canDownload ? h('div', { class: 'rw-actions' },
-        button('Save the video file', () => {
-          const url = URL.createObjectURL(session.blob);
-          const link = h('a', { href: url, download: recordingName(session) });
-          link.click();
-          setTimeout(() => URL.revokeObjectURL(url), 10_000);
-        }),
+        button('Save the video file', () => downloadFile(session)),
         !session.wallPost ? button('Rotate video and analyze again', () => {
           session.rotation = ((session.rotation || 0) + 90) % 360;
           session.analysis = null;
@@ -717,7 +757,7 @@ export function reviewScreen(root, app, id) {
       });
     }
 
-    if (!session.saved) copyToThisComputer(session);
+    if (!session.saved) keepOnDevice(session);
     keepRecording();
     if (session.blob && !session.analysis) runAnalysis();
     else renderAll();

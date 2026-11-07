@@ -22,6 +22,10 @@ const fake = http.createServer((req, res) => {
     lastRequest = { url: req.url, headers: req.headers, body: JSON.parse(Buffer.concat(chunks).toString()) };
     const r = typeof reply === 'function' ? reply(lastRequest) : reply;
     if (r.hang) return;
+    if (r.sse) {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      return res.end(r.sse.map((c) => `data: ${JSON.stringify(c)}\r\n\r\n`).join(''));
+    }
     res.writeHead(r.status ?? 200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(r.body));
   });
@@ -121,6 +125,37 @@ test('if the speed settings are refused, it asks once more without them', async 
   assert.equal(lastRequest.body.generationConfig.mediaResolution, undefined);
 });
 
+test('with progress on, the page hears each step and then the same result', async () => {
+  setEnv();
+  const answer = JSON.stringify(GOOD);
+  reply = (req) => (req.url.includes(':streamGenerateContent?alt=sse')
+    ? { sse: [
+      { candidates: [{ content: { parts: [{ thought: true, text: 'Looking at posture.' }] } }] },
+      { candidates: [{ content: { parts: [{ text: answer.slice(0, 60) }] } }] },
+      { candidates: [{ content: { parts: [{ text: answer.slice(60) }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 10, thoughtsTokenCount: 5, candidatesTokenCount: 50 } },
+    ] }
+    : { status: 500, body: {} });
+  const res = await call(goodBody, { host: 'x.test', 'x-judge-progress': '1' });
+  assert.match(res.headers.get('content-type'), /ndjson/);
+  const events = (await res.text()).trim().split('\n').map((l) => JSON.parse(l));
+  const stages = events.filter((e) => e.type === 'progress').map((e) => e.stage);
+  assert.deepEqual([...new Set(stages)], ['received', 'asking', 'thinking', 'writing']);
+  assert.equal(lastRequest.body.generationConfig.thinkingConfig.includeThoughts, true);
+  const result = events.at(-1);
+  assert.equal(result.type, 'result');
+  assert.equal(result.status, 200);
+  assert.equal(result.body.presence.score, 14);
+  assert.ok(!JSON.stringify(events).includes('Looking at posture'), 'the model\'s thoughts never reach the page');
+});
+
+test('with progress on, a refusal still arrives as a result line', async () => {
+  setEnv(null);
+  const res = await call(goodBody, { host: 'x.test', 'x-judge-progress': '1' });
+  const last = (await res.text()).trim().split('\n').map((l) => JSON.parse(l)).at(-1);
+  assert.equal(last.status, 503);
+  assert.equal(last.body.code, 'no_key');
+});
+
 const failures = [
   ['rate limit', { status: 429, body: {} }, 429, 'rate_limited'],
   ['bad key', { status: 403, body: {} }, 502, 'bad_key'],
@@ -174,7 +209,7 @@ test('if everything is busy, a clear message and a bounded number of calls', asy
   const res = await call(goodBody);
   assert.equal(res.status, 503);
   assert.equal((await res.json()).code, 'busy');
-  assert.equal(requests, 5, 'the main model twice, then the three others once each');
+  assert.equal(requests, 6, 'the main model twice, then the four others once each');
 });
 
 const DAILY_LIMIT = { error: { status: 'RESOURCE_EXHAUSTED', details: [{ '@type': 'type.googleapis.com/google.rpc.QuotaFailure', violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', quotaValue: '20' }] }] } };
@@ -196,7 +231,7 @@ test('a model out of quota is not retried, and the next model answers', async ()
 test('a model that hangs is given up on, and the next one answers', async () => {
   setEnv();
   process.env.GEMINI_RETRY_MS = '1';
-  process.env.GEMINI_TIMEOUT_MS = '60';
+  process.env.GEMINI_TIMEOUT_MS = '300';
   const urls = [];
   reply = (req) => {
     urls.push(req.url);
@@ -228,7 +263,7 @@ test('when every model has used its day, it says so rather than "wait a minute"'
   const body = await res.json();
   assert.equal(body.code, 'out_of_quota');
   assert.match(body.message, /keeps its measured score/);
-  assert.equal(requests, 4, 'each model once');
+  assert.equal(requests, 5, 'each model once');
 });
 
 test('errors that retrying cannot fix are not retried', async () => {

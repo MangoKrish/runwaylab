@@ -13,14 +13,37 @@ export function recordingName(session) {
   return `${stamp}_${String(session.id).replace(/[^a-z0-9]/gi, '').slice(0, 8)}.${extensionFor(session.mime || session.blob?.type)}`;
 }
 
-/** Copies the video to the dev server's recordings folder, once per walk. Quietly does nothing anywhere else. */
-export async function copyToThisComputer(session) {
-  if (!LOCAL_HOSTS.includes(location.hostname) || !session.blob || copied.has(session.id)) return;
-  copied.add(session.id);
+/** Copies the video to the dev server's recordings folder. True only when it landed there. */
+async function copyToThisComputer(session) {
+  if (!LOCAL_HOSTS.includes(location.hostname)) return false;
   try {
     const res = await fetch(`/dev/recordings?name=${encodeURIComponent(recordingName(session))}`, { method: 'POST', body: session.blob });
     if (res.ok) console.info(`[keep] recording saved to recordings/${recordingName(session)}`);
+    return res.ok;
   } catch {
-    // Not running under npm run dev. The copy in the browser still stands.
+    return false;
   }
+}
+
+/** Hands the browser the video as a file download: Downloads on a computer, the Files app on an iPhone. */
+export function downloadFile(session) {
+  const url = URL.createObjectURL(session.blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = recordingName(session);
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+/**
+ * Every new camera recording becomes a real file on the device that filmed it, once. Under npm run dev it goes
+ * to the project's recordings/ folder instead; anywhere else, or if that fails, it is downloaded. Uploaded clips
+ * are already files, so they are left alone.
+ */
+export async function keepOnDevice(session) {
+  if (session.source !== 'camera' || !session.blob || copied.has(session.id)) return;
+  copied.add(session.id);
+  if (!(await copyToThisComputer(session))) downloadFile(session);
 }

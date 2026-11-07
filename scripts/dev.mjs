@@ -53,7 +53,15 @@ async function runFunction(req, res, name) {
   const cookies = out.headers.getSetCookie(); // Several cookies must stay separate headers, not one joined line.
   if (cookies.length) outHeaders['set-cookie'] = cookies;
   res.writeHead(out.status, outHeaders);
-  return res.end(Buffer.from(await out.arrayBuffer()));
+  if (!out.body) return res.end();
+  // Passed on as it arrives, so a streamed answer (the judge's progress) reaches the page live, as on Vercel.
+  const reader = out.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    res.write(value);
+  }
+  return res.end();
 }
 
 function serveFile(req, res, pathname) {

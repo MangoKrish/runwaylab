@@ -119,7 +119,8 @@ function cleanMeasurements(input) {
  * quota has run out. The free tier allows 20 requests per model per day, so waiting will not help, and the next
  * model has its own allowance.
  */
-const FALLBACK_MODELS = 'gemini-3.8-flash,gemini-3.7-flash,gemini-3.5-flash';
+// Flash-Lite comes last: the fastest and with its own allowance, though the least careful judge of the four.
+const FALLBACK_MODELS = 'gemini-3.8-flash,gemini-3.7-flash,gemini-3.5-flash,gemini-3.5-flash-lite';
 // A model can hang for minutes instead of answering. Good answers take 8 to 27 s, so give each model 40, and stop
 // before the page gives up at 120.
 const ATTEMPT_MS = () => Number(process.env.GEMINI_TIMEOUT_MS ?? 40000);
@@ -140,6 +141,7 @@ async function askWithRetries(stills, measurements, key, ask, trace) {
     if (usedUp.has(attempts[i])) continue;
     if (res?.status === 503) await new Promise((r) => setTimeout(r, wait));
     model = attempts[i];
+    trace?.onProgress?.({ stage: 'asking', model, retry: i > 0 });
     try {
       res = await ask(stills, measurements, key, model, AbortSignal.timeout(Math.min(ATTEMPT_MS(), left)), trace);
     } catch (err) {
@@ -151,7 +153,10 @@ async function askWithRetries(stills, measurements, key, ask, trace) {
       continue;
     }
     // Quota is counted per model, so one that has run out says nothing about the next.
-    if (res.status === 429) usedUp.add(model);
+    if (res.status === 429) {
+      usedUp.add(model);
+      if (trace) trace.attempts.at(-1).daily = await isDailyLimit(res);
+    }
     else if (res.status === 503) busy = res;
     else break;
   }
@@ -190,7 +195,11 @@ function speedConfig() {
 async function callGemini(stills, measurements, key, model, { plain = false, ...formatConfig }, signal, trace) {
   const started = Date.now();
   try {
-    const res = await fetch(`${API_BASE()}/models/${model}:generateContent`, {
+    const streaming = !!trace?.onProgress;
+    const speed = plain ? {} : speedConfig();
+    // While someone watches the bar, ask for the answer as it is written, so the bar can follow it.
+    if (streaming && speed.thinkingConfig) speed.thinkingConfig.includeThoughts = true;
+    const res = await fetch(`${API_BASE()}/models/${model}:${streaming ? 'streamGenerateContent?alt=sse' : 'generateContent'}`, {
       method: 'POST',
       signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
@@ -201,15 +210,66 @@ async function callGemini(stills, measurements, key, model, { plain = false, ...
             { text: PROMPT(measurements, stills.length) },
           ],
         }],
-        generationConfig: { ...(plain ? {} : speedConfig()), ...formatConfig },
+        generationConfig: { ...speed, ...formatConfig },
       }),
     });
+    const out = streaming && res.ok && (res.headers.get('content-type') || '').includes('event-stream') ? await readStream(res, trace) : res;
     trace?.attempts.push({ model, status: res.status, ms: Date.now() - started });
-    return res;
+    return out;
   } catch (err) {
     trace?.attempts.push({ model, status: err?.name === 'TimeoutError' ? 'timed out' : 'failed', ms: Date.now() - started });
     throw err;
   }
+}
+
+/**
+ * Reads Gemini's server-sent events, telling the page when it is thinking and how much of the answer is written,
+ * then hands back one ordinary JSON response so the rest of this file treats both ways alike.
+ */
+async function readStream(res, trace) {
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let text = '';
+  let usage = null;
+  let finishReason = null;
+  let promptFeedback = null;
+  let thoughts = 0;
+  let reported = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let end;
+    while ((end = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, end).trim();
+      buffer = buffer.slice(end + 1);
+      if (!line.startsWith('data:')) continue;
+      let chunk;
+      try {
+        chunk = JSON.parse(line.slice(5));
+      } catch {
+        continue;
+      }
+      usage = chunk.usageMetadata ?? usage;
+      promptFeedback = chunk.promptFeedback ?? promptFeedback;
+      const candidate = chunk.candidates?.[0];
+      finishReason = candidate?.finishReason ?? finishReason;
+      for (const part of candidate?.content?.parts ?? []) {
+        if (part.thought) {
+          thoughts++;
+          trace.onProgress({ stage: 'thinking', thoughts });
+        } else if (part.text) {
+          text += part.text;
+          if (text.length - reported >= 40 || reported === 0) {
+            reported = text.length;
+            trace.onProgress({ stage: 'writing', chars: text.length });
+          }
+        }
+      }
+    }
+  }
+  return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text }] }, finishReason }], usageMetadata: usage, promptFeedback }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 }
 
 const seconds = (ms) => `${(ms / 1000).toFixed(1)} s`;
@@ -220,7 +280,7 @@ const seconds = (ms) => `${(ms / 1000).toFixed(1)} s`;
  */
 function logJudgment(trace, status, code, usage) {
   if (process.env.RUNWAYLAB_JUDGE_LOG === '0') return;
-  const calls = trace.attempts.map((a) => `${a.model} ${a.status} in ${seconds(a.ms)}`).join(', ') || 'no call';
+  const calls = trace.attempts.map((a) => `${a.model} ${a.status}${a.status === 429 ? (a.daily ? ' (used up for today)' : ' (per-minute limit)') : ''} in ${seconds(a.ms)}`).join(', ') || 'no call';
   const images = usage?.promptTokensDetails?.find((d) => d.modality === 'IMAGE')?.tokenCount;
   const tokens = usage ? ` · tokens: ${usage.promptTokenCount ?? '?'} in${images ? ` (${images} for images)` : ''}, ${usage.thoughtsTokenCount ?? 0} thinking, ${usage.candidatesTokenCount ?? '?'} out` : '';
   console.log(`[judge] ${status} ${code} in ${seconds(Date.now() - trace.started)} · ${trace.stills} stills, ${trace.kb} KB · thinking ${THINKING()}, images ${MEDIA_RESOLUTION()} · ${calls}${tokens}`);
@@ -231,7 +291,35 @@ export async function GET() {
   return json(200, { ready: !!process.env.GEMINI_API_KEY, model: MODEL(), paidTier: process.env.GEMINI_PAID_TIER === '1' });
 }
 
+/**
+ * With the header x-judge-progress: 1, the answer comes as lines of JSON: progress events while the judge works,
+ * then one result line with the status and body a plain request would have had.
+ */
 export async function POST(request) {
+  if (request.headers.get('x-judge-progress') !== '1') return judge(request);
+  const encoder = new TextEncoder();
+  let out;
+  const stream = new ReadableStream({ start(controller) { out = controller; } });
+  const send = (event) => {
+    try {
+      out.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+    } catch {
+      // The page went away. The work finishes anyway, and nobody reads the rest.
+    }
+  };
+  (async () => {
+    const res = await judge(request, (p) => send({ type: 'progress', ...p })).catch(() => refuse(500, 'server', 'The judge stopped unexpectedly. Try again.'));
+    send({ type: 'result', status: res.status, body: await res.json() });
+    try {
+      out.close();
+    } catch {
+      // Already closed by the page leaving.
+    }
+  })();
+  return new Response(stream, { headers: { 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' } });
+}
+
+async function judge(request, onProgress = null) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return refuse(503, 'no_key', 'The judge is not connected yet: this server has no Gemini API key.');
   if (!sameSite(request)) return refuse(403, 'forbidden', 'This judge only answers its own site.');
@@ -245,7 +333,8 @@ export async function POST(request) {
   const problem = checkStills(body?.stills);
   if (problem) return refuse(400, 'bad_request', problem);
   const measurements = cleanMeasurements(body.measurements);
-  const trace = { started: Date.now(), attempts: [], stills: body.stills.length, kb: Math.round(body.stills.reduce((sum, s) => sum + s.jpeg.length * 0.75, 0) / 1024) };
+  onProgress?.({ stage: 'received' });
+  const trace = { onProgress, started: Date.now(), attempts: [], stills: body.stills.length, kb: Math.round(body.stills.reduce((sum, s) => sum + s.jpeg.length * 0.75, 0) / 1024) };
   let usage = null;
   const fail = (status, code, message) => {
     logJudgment(trace, status, code, usage);
@@ -260,7 +349,12 @@ export async function POST(request) {
     return fail(502, 'unreachable', 'The server could not reach Gemini. Try again.');
   }
 
-  if (res.status === 503) return fail(503, 'busy', 'Gemini is very busy right now. Wait a moment and try again.');
+  if (res.status === 503) {
+    const usedUp = trace.attempts.some((a) => a.daily);
+    return fail(503, 'busy', usedUp
+      ? 'Gemini is very busy right now, and today\'s free requests have run out on its other models. Try again in a few minutes.'
+      : 'Gemini is very busy right now. Wait a moment and try again.');
+  }
   if (res.status === 429) {
     if (await isDailyLimit(res)) return fail(429, 'out_of_quota', 'The judge has used all of today\'s requests, so this walk keeps its measured score. More become available at midnight Pacific time.');
     return fail(429, 'rate_limited', 'The judge is at its request limit. Wait a minute and try again.');

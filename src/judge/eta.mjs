@@ -1,9 +1,9 @@
-// How long judging should take, learned from the last few judgments on this device. Gemini sends nothing until it
-// has finished, so the bar is an estimate. It is honest about that: once the estimate has passed, it slows down
-// and says so instead of sitting at 100%.
+// How long Gemini thinks before it starts writing, learned from the last few judgments on this device. Thinking is
+// the one step that sends no signal, so this part of the bar is an estimate. Once the estimate has passed it slows
+// down and says so, instead of claiming to be nearly done.
 const KEY = 'runwaylab.judgeSeconds';
 const KEEP = 5;
-export const DEFAULT_SECONDS = 15;
+export const DEFAULT_SECONDS = 10;
 
 function read() {
   try {
@@ -44,5 +44,5 @@ export function timeLeftText(elapsed, expected) {
   const left = Math.ceil(expected - elapsed);
   if (left > 1) return `About ${left} seconds left`;
   if (elapsed < expected * 2) return 'Almost there';
-  return `Slower than usual (${Math.round(elapsed)} s). Gemini may be busy, so the server is trying other models. It gives up after 2 minutes.`;
+  return `Slower than usual (${Math.round(elapsed)} s). Gemini may be busy. The judge gives up after 2 minutes.`;
 }
