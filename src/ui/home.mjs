@@ -80,7 +80,26 @@ const need = (glyph, title, text) => h('li', { class: 'rw-needs__item' },
   h('h4', null, title),
   h('p', null, text));
 
-const step = (n, glyph, title, text, when, gets) => h('li', { class: 'rw-step' },
+/** A round stamp on the plate, like the maker's mark on a programme. It turns slowly; reduced motion holds it still. */
+function stamp() {
+  const svg = document.createElementNS(SVG, 'svg');
+  svg.setAttribute('class', 'rw-stamp');
+  svg.setAttribute('viewBox', '0 0 140 140');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.innerHTML = '<circle cx="70" cy="70" r="69" fill="var(--stage-2)" stroke="var(--stage-accent)" stroke-width="1.5"/>'
+    + '<circle cx="70" cy="70" r="59" fill="none" stroke="var(--stage-hair)"/>'
+    + '<path id="rw-stamp-path" d="M70 70m-50 0a50 50 0 1 1 100 0a50 50 0 1 1-100 0" fill="none"/>'
+    + '<text font-size="11.5" font-weight="600" letter-spacing="2.2" fill="var(--stage-ink)"><textPath href="#rw-stamp-path" textLength="302">NOTHING UPLOADED · STAYS ON THIS DEVICE ·</textPath></text>'
+    + '<circle cx="70" cy="70" r="4" fill="var(--stage-accent)"/>'
+    + '<path d="M70 52v10M70 78v10M52 70h10M78 70h10" stroke="var(--stage-accent)" stroke-width="1.5" stroke-linecap="round"/>';
+  return svg;
+}
+
+/** One cell of the strip under the hero: the fact in the serif, the detail under it. */
+const fact = (head, detail) => h('li', null, h('b', null, head), h('small', null, detail));
+
+const step = (n, glyph, title, text, when, gets) => h('li', { class: `rw-step rw-step--${n}` },
   h('div', { class: 'rw-step__mark', 'aria-hidden': 'true' },
     h('span', { class: 'rw-step__num' }, String(n)),
     n === 1 ? h('span', { class: 'rw-step__note' }, 'start here') : null,
@@ -176,7 +195,6 @@ export function homeScreen(root) {
           h('span', { class: 'rw-hero__line' }, 'Turn.'), h('br', null),
           h('span', { class: 'rw-hero__line rw-hero__accent' }, 'Get judged.')),
         h('p', { class: 'rw-hero__lede' }, 'Walk toward the camera and back. We track 26 body landmarks to measure how you really move, Gemini judges your presence and style, and you find out if you have a runway walk.'),
-        h('p', { class: 'rw-hero__meta' }, 'Two minutes · any camera · your video stays on this device'),
         h('div', { class: 'rw-actions rw-actions--split rw-hero__actions' },
           h('a', { class: 'rw-btn rw-btn--solid rw-btn--big rw-actions__full', href: '#/studio' }, 'Start a walk'),
           h('a', { class: 'rw-btn rw-btn--big', href: '#/review/sample' }, 'See a sample'),
@@ -184,11 +202,18 @@ export function homeScreen(root) {
         h('p', { class: 'rw-action-note' }, 'Nothing is recorded until you press Start, and nothing is uploaded.')),
       h('figure', { class: 'rw-hero__plate rw-plate rw-on-stage' },
         h('p', { class: 'rw-plate__label' }, 'Plate ', h('b', null, 'I')),
-        h('div', { class: 'rw-hero__picture' }, canvas),
+        h('div', { class: 'rw-hero__picture' }, canvas, stamp()),
         h('figcaption', { class: 'rw-hero__key' },
           h('p', { class: 'rw-hero__figtitle' }, h('b', null, 'Fig. 1'), ' What the tracker measures on the figure'),
           readouts,
           h('p', { class: 'rw-hero__caption' }, 'A made-up figure, not a real person.')))),
+
+    // The selvedge: the four facts a reader wants before anything else, in one ruled strip under the hero.
+    h('ul', { class: 'rw-selvedge', 'aria-label': 'In short' },
+      fact('Two minutes', 'Walk up and back, two or three times'),
+      fact('Any camera', 'A webcam, or an iPhone at hip height'),
+      fact('70 measured, 30 opinion', 'The code adds it up, never the judge'),
+      fact('Stays on this device', 'Nothing is uploaded unless you choose')),
 
     h('section', { class: 'rw-section rw-how', 'aria-labelledby': 'rw-how-title' },
       h('div', { 'data-reveal': '' }, sectionHead({ no: 1, eyebrow: 'How it works', title: 'Two minutes, three steps', id: 'rw-how-title' })),
@@ -246,6 +271,15 @@ export function homeScreen(root) {
 
     h('section', { class: 'rw-band rw-on-stage', 'aria-labelledby': 'rw-fair-title' },
       h('div', { class: 'rw-band__inner' },
+        // The term, set like a dictionary entry, so the rules that follow have something to be rules about.
+        h('div', { class: 'rw-defn', 'data-reveal': '' },
+          h('div', null,
+            h('p', { class: 'rw-eyebrow' }, 'The term'),
+            h('p', { class: 'rw-defn__word' }, 'runway walk'),
+            h('p', { class: 'rw-defn__meta' }, 'run·way walk · ', h('i', null, 'noun'))),
+          h('div', { class: 'rw-defn__text' },
+            h('p', null, 'A walk toward the camera and back, with one turn, the way models cross a show floor. Here it is scored on seven measurements of how the body moves and two opinions about how it carries itself.'),
+            h('p', null, 'No study sets targets for one, so the rules are ours, and they are the same for everyone who walks.'))),
         h('div', { 'data-reveal': '' }, sectionHead({ no: 4, eyebrow: 'Fairness', title: 'The same rules for every body', id: 'rw-fair-title' })),
         h('div', { class: 'rw-fair', 'data-reveal': '' },
           fairness('Your height, not your frame', 'Every length is a share of your own height, measured while you stand still. Shoulder width would favour some bodies over others, so it is not used.'),

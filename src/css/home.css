@@ -3,7 +3,6 @@
    closing band, scroll reveal, then the 1000 / 760 / 520 px breakpoints. */
 
 .rw-lede { font-size: var(--t-lede); line-height: 1.5; max-width: var(--measure-lede); }
-.rw-step { padding-top: 0; border-top: 0; }
 .rw-needs { margin: 0; }
 .rw-needs li { padding-top: 0; border-top: 0; }
 .rw-proof__intro, .rw-score-guide__intro { display: block; }
@@ -48,8 +47,16 @@
 .rw-hero__line { display: inline-block; animation: rw-hero-line var(--d-long) var(--ease-out) backwards; }
 .rw-hero__line:nth-of-type(2) { animation-delay: 90ms; }
 .rw-hero__line:nth-of-type(3) { animation-delay: 180ms; }
-.rw-hero__accent { font-style: italic; font-weight: 400; color: var(--accent); }
+.rw-hero__accent { font-style: italic; font-weight: 400; color: var(--accent); position: relative; }
+/* floor tape under the last line: a dashed gold rule that lays itself down once the words have landed */
+.rw-hero__accent::after { content: ''; position: absolute; left: 0.02em; right: 0.12em; bottom: -0.05em; height: max(3px, 0.045em); background: repeating-linear-gradient(90deg, var(--lamp) 0 0.3em, transparent 0.3em 0.46em); animation: rw-stitch 900ms 700ms var(--ease-out) both; }
+@keyframes rw-stitch { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
 @keyframes rw-hero-line { from { opacity: 0; transform: translateY(0.18em); } }
+@keyframes rw-spin { to { rotate: 360deg; } }
+
+/* the stamp in the corner of Plate I */
+.rw-stamp { position: absolute; z-index: 9; right: 14px; top: 14px; width: clamp(84px, 22%, 124px); height: auto; animation: rw-spin 48s linear infinite; }
+.rw-stamp text { font-family: var(--f-text); }
 .rw-hero__lede { max-width: 36ch; font-size: var(--t-lede); line-height: 1.5; color: var(--ink-2); }
 .rw-hero .rw-hero__actions { margin-top: var(--s-6); }
 
@@ -73,17 +80,34 @@
 .rw-hero__readout .rw-unit { color: var(--stage-ink-2); }
 .rw-hero__caption { font-family: var(--f-display); font-style: italic; font-size: 0.9375rem; line-height: 1.4; color: var(--stage-ink-2); }
 
+/* The selvedge: four facts in one ruled strip, ink rules outside and a gold hairline inside each ------------- */
+.rw-selvedge { position: relative; list-style: none; margin: var(--s-7) 0 0; padding: 5px 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-block: 1.5px solid var(--rule); }
+.rw-selvedge::before, .rw-selvedge::after { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: var(--lamp); }
+.rw-selvedge::before { top: 3px; }
+.rw-selvedge::after { bottom: 3px; }
+.rw-selvedge li { padding: var(--s-5) var(--s-4); text-align: center; }
+.rw-selvedge li + li { border-left: 2px dotted var(--hair-strong); }
+.rw-selvedge b { display: block; font-family: var(--f-display); font-size: 1.375rem; font-weight: var(--w-title); font-variation-settings: 'opsz' 32; line-height: 1.2; color: var(--ink); font-variant-numeric: tabular-nums lining-nums; }
+.rw-selvedge small { display: block; margin-top: 4px; font-size: var(--t-small); line-height: 1.45; color: var(--ink-2); }
+
 /* Sections -------------------------------------------------------------------------------------------------- */
 .rw-section { margin-top: var(--space-section); }
 
-/* How it works: three numbered steps, each opening with a rule --------------------------------------------- */
-.rw-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-7) calc(var(--gap) * 1.5); }
-.rw-step { display: grid; gap: var(--s-3); align-content: start; }
-.rw-step__mark { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-4); padding-bottom: var(--s-4); margin-bottom: var(--s-2); border-bottom: 1px solid var(--hair); }
-.rw-step__num { font-family: var(--f-display); font-style: italic; font-size: 2.5rem; font-weight: var(--w-num); font-variation-settings: 'opsz' var(--opsz-num); line-height: 0.9; color: var(--accent); }
-.rw-step__icon { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--hair-strong); border-radius: 50%; background: var(--surface); color: var(--ink); }
-.rw-step h3 { font-family: var(--f-display); font-size: var(--t-h2); font-weight: var(--w-title); font-variation-settings: 'opsz' var(--opsz-h2); line-height: 1.12; }
-.rw-step p { color: var(--ink-2); max-width: 38ch; }
+/* How it works: three steps as colour-blocked tiles, the numeral large at the top, footlights along the bottom */
+.rw-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+.rw-step { --tile-bg: var(--band); --tile-ink: var(--ink); --tile-accent: var(--accent); --tile-dot: var(--lamp); --tile-pad: clamp(20px, 2.6vw, 32px); position: relative; display: grid; gap: var(--s-3); align-content: start; padding: var(--tile-pad) var(--tile-pad) calc(var(--tile-pad) + 20px); border: 1.5px solid var(--rule); border-radius: var(--r-l); background: var(--tile-bg); color: var(--tile-ink); transition: transform var(--d-short) var(--ease-out), box-shadow var(--d-short) var(--ease-out); }
+.rw-step:hover { transform: translate(-2px, -2px); box-shadow: var(--print-sm); }
+.rw-step::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: 11px; height: 6px; background: radial-gradient(circle at 3px 3px, var(--tile-dot) 2.2px, transparent 2.9px) 0 0 / 16px 6px repeat-x; }
+.rw-step--2 { --tile-bg: var(--lamp); --tile-ink: #14213D; --tile-accent: #14213D; --tile-dot: #14213D; }
+.rw-step--3 { --tile-bg: var(--stage); --tile-ink: var(--stage-ink); --tile-accent: var(--stage-accent); --tile-dot: var(--stage-accent); }
+.rw-step__mark { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-4); margin-bottom: var(--s-6); }
+.rw-step__num { font-family: var(--f-display); font-style: italic; font-size: 3.75rem; font-weight: var(--w-num); font-variation-settings: 'opsz' var(--opsz-num); line-height: 0.85; color: var(--tile-accent); }
+.rw-step__icon { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid color-mix(in srgb, currentColor 40%, transparent); border-radius: 50%; color: inherit; }
+.rw-step h3 { font-family: var(--f-display); font-size: var(--t-h2); font-weight: var(--w-title); font-variation-settings: 'opsz' var(--opsz-h2); line-height: 1.12; color: inherit; }
+.rw-step p { color: inherit; opacity: 0.84; max-width: 38ch; }
+.rw-step .rw-tag { border-color: color-mix(in srgb, currentColor 45%, transparent); color: inherit; }
+.rw-step .rw-tag--quiet { opacity: 0.8; }
+.rw-step__note { color: inherit; opacity: 0.7; }
 
 .rw-needs__wrap { margin-top: var(--space-block); padding: clamp(24px, 3vw, 40px); border: 1px solid var(--hair-strong); border-radius: var(--r-m); background: var(--surface); }
 .rw-needs__title { font-family: var(--f-text); font-size: var(--t-label); font-weight: 600; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-3); margin: 0 0 var(--s-5); }
@@ -176,6 +200,15 @@
 .rw-band::before { content: ''; position: absolute; inset: 4px; border: 1px solid var(--stage-hair); border-radius: 2px; pointer-events: none; }
 .rw-band__inner { padding: clamp(40px, 6vw, 96px) clamp(24px, 5vw, 80px); }
 .rw-band .rw-title { color: var(--stage-ink); }
+/* the term, set like a dictionary entry */
+.rw-defn { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s-5) calc(var(--gap) * 2); align-items: start; padding-bottom: var(--space-block); margin-bottom: var(--space-block); border-bottom: 1px solid var(--stage-hair); }
+.rw-defn .rw-eyebrow { color: var(--stage-accent); margin-bottom: var(--s-3); }
+.rw-defn__word { font-family: var(--f-display); font-style: italic; font-size: clamp(2.75rem, 1.5rem + 4.5vw, 5rem); font-weight: 500; font-variation-settings: 'opsz' 72; line-height: 0.95; letter-spacing: -0.01em; color: var(--stage-accent); }
+.rw-defn__meta { margin-top: var(--s-3); font-size: var(--t-body); letter-spacing: 0.02em; color: var(--stage-ink-2); }
+.rw-defn__meta i { font-family: var(--f-display); font-style: italic; }
+.rw-defn__text { display: grid; gap: var(--s-3); max-width: var(--measure); padding-top: var(--s-6); }
+.rw-defn__text p:first-child { font-size: var(--t-lede); line-height: 1.5; color: var(--stage-ink); }
+.rw-defn__text p + p { font-size: var(--t-small); line-height: 1.6; color: var(--stage-ink-2); }
 .rw-fair { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-6) var(--gap); }
 .rw-fair__item { display: grid; gap: var(--s-3); align-content: start; padding-top: var(--s-5); border-top: 1px solid var(--stage-ink); background: linear-gradient(90deg, var(--stage-accent) 0 24px, transparent 24px) top left / 100% 2px no-repeat; }
 .rw-fair__item h3 { font-family: var(--f-display); font-size: 1.5rem; font-weight: 600; font-variation-settings: 'opsz' 32; line-height: 1.15; color: var(--stage-ink); }
@@ -225,7 +258,7 @@
 .rw-js-reveal [data-reveal]:not(.is-revealed) .rw-dots__dot { transform: scale(0); }
 
 @media (prefers-reduced-motion: reduce) {
-  .rw-hero__line, .rw-hero__readout { animation: none; }
+  .rw-hero__line, .rw-hero__readout, .rw-stamp, .rw-hero__accent::after { animation: none; }
   .rw-js-reveal [data-reveal], .rw-js-reveal [data-reveal] > *, .rw-dots__zone, .rw-dots__dot { transition: none; }
 }
 
@@ -240,11 +273,14 @@
   .rw-hero__readout, .rw-hero__readout:last-child { display: inline-flex; align-items: baseline; gap: var(--s-2); padding: 6px 12px; border: 1px solid var(--stage-hair); animation: none; }
   .rw-hero__readout::before { display: none; }
   .rw-hero__readout dd { font-size: 1.125rem; }
-  .rw-steps, .rw-score-guide, .rw-proof, .rw-privacy { grid-template-columns: minmax(0, 1fr); }
+  .rw-steps, .rw-score-guide, .rw-proof, .rw-privacy, .rw-defn { grid-template-columns: minmax(0, 1fr); }
   .rw-score-guide__intro { position: static; }
   .rw-needs, .rw-fair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .rw-steps { gap: var(--s-6); }
   .rw-step p { max-width: var(--measure); }
+  .rw-defn__text { padding-top: 0; }
+  .rw-selvedge { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rw-selvedge li:nth-child(3) { border-left: 0; }
+  .rw-selvedge li:nth-child(n + 3) { border-top: 2px dotted var(--hair-strong); }
 }
 
 /* 760 px: the phone ------------------------------------------------------------------------------------------ */
@@ -265,6 +301,10 @@
 /* 520 px: two-up grids go one-up ----------------------------------------------------------------------------- */
 @media (max-width: 520px) {
   .rw-needs, .rw-fair { grid-template-columns: minmax(0, 1fr); }
+  .rw-selvedge { grid-template-columns: minmax(0, 1fr); margin-top: var(--s-6); }
+  .rw-selvedge li { padding: var(--s-4) var(--s-3); }
+  .rw-selvedge li + li { border-left: 0; border-top: 2px dotted var(--hair-strong); }
+  .rw-step { box-shadow: none; }
   .rw-points__row { grid-template-columns: 2.75rem minmax(0, 1fr); gap: var(--s-3); }
   .rw-legend { flex-direction: column; }
   .rw-hero__readouts { display: grid; gap: 0; }
@@ -272,8 +312,7 @@
 }
 
 /* ── How the information is set: the programme's shapes ──────────────────────────────────────────────────── */
-/* under the hero: an italic line of facts, and a note under the buttons saying what will happen */
-.rw-hero__meta { margin-top: var(--s-4); font-family: var(--f-display); font-style: italic; font-size: 1.125rem; line-height: 1.4; color: var(--ink-2); }
+/* under the buttons: a note saying what will happen */
 .rw-action-note { margin-top: var(--s-3); font-size: var(--t-caption); line-height: 1.5; color: var(--ink-3); }
 
 /* a guidance line: one sentence that answers the question a reader has at this point */
