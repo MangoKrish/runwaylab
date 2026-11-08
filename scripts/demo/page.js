@@ -7,9 +7,7 @@
   canvas.width = OW;
   canvas.height = OH;
   const c = canvas.getContext('2d');
-  // Well darker than the site's own navy (#14213D), so the browser window stands clear of the background.
-  const NAVY = '#060B17';
-  const INK_BG = '#050913';
+  const NAVY = '#14213D';
   const CREAM = '#F4EDE0';
   const APRICOT = '#F2C38B';
   const FONT = '"Be Vietnam Pro", system-ui, sans-serif';
@@ -26,18 +24,6 @@
     return img;
   }
 
-  let fox = null;
-  window.loadFox = async () => {
-    const { foxMark } = await import('/src/ui/fox.mjs');
-    const svg = foxMark();
-    svg.setAttribute('width', '256');
-    svg.setAttribute('height', '256');
-    const img = new Image();
-    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}`;
-    await img.decode();
-    fox = img;
-    return true;
-  };
 
   const ease = (u) => (u <= 0 ? 0 : u >= 1 ? 1 : u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2);
   const out = (u) => 1 - (1 - Math.min(Math.max(u, 0), 1)) ** 3;
@@ -55,16 +41,16 @@
   function background(t) {
     c.fillStyle = NAVY;
     c.fillRect(0, 0, OW, OH);
-    // Slow glows, the house apricot and a deep blue, drifting, kept faint so the window stays the brightest thing.
+    // Two slow glows, the house apricot and a deeper blue, drifting.
     const blobs = [
-      [0.22 + 0.05 * Math.sin(t * 0.21), 0.78 + 0.04 * Math.cos(t * 0.17), 0.62, 'rgba(242,195,139,0.10)'],
-      [0.82 + 0.04 * Math.cos(t * 0.13), 0.2 + 0.05 * Math.sin(t * 0.19), 0.7, 'rgba(40,58,100,0.35)'],
-      [0.6 + 0.06 * Math.sin(t * 0.11), 0.95, 0.5, 'rgba(242,195,139,0.05)'],
+      [0.22 + 0.05 * Math.sin(t * 0.21), 0.78 + 0.04 * Math.cos(t * 0.17), 0.62, 'rgba(242,195,139,0.22)'],
+      [0.82 + 0.04 * Math.cos(t * 0.13), 0.2 + 0.05 * Math.sin(t * 0.19), 0.7, 'rgba(66,86,131,0.55)'],
+      [0.6 + 0.06 * Math.sin(t * 0.11), 0.95, 0.5, 'rgba(242,195,139,0.10)'],
     ];
     for (const [x, y, r, col] of blobs) {
       const g = c.createRadialGradient(x * OW, y * OH, 0, x * OW, y * OH, r * OW);
       g.addColorStop(0, col);
-      g.addColorStop(1, 'rgba(6,11,23,0)');
+      g.addColorStop(1, 'rgba(20,33,61,0)');
       c.fillStyle = g;
       c.fillRect(0, 0, OW, OH);
     }
@@ -76,9 +62,9 @@
     c.save();
     c.globalAlpha = alpha;
     c.translate(0, lift);
-    c.shadowColor = 'rgba(0,0,0,0.7)';
-    c.shadowBlur = 70;
-    c.shadowOffsetY = 28;
+    c.shadowColor = 'rgba(5,10,24,0.55)';
+    c.shadowBlur = 60;
+    c.shadowOffsetY = 24;
     rounded(x, y, w, h, 14);
     c.fillStyle = '#0F1A31';
     c.fill();
@@ -106,9 +92,8 @@
     c.fillText('runwaylab-mu.vercel.app', x + w / 2, y + TITLE_H / 2 + 1);
     if (img) c.drawImage(img, x, y + TITLE_H, CSS_W, CSS_H);
     c.restore();
-    // A fine cream edge, so the window's own navy never runs into the background.
-    c.strokeStyle = 'rgba(244,237,224,0.22)';
-    c.lineWidth = 1.5;
+    c.strokeStyle = 'rgba(244,237,224,0.10)';
+    c.lineWidth = 1;
     rounded(x + 0.5, y + 0.5, w - 1, h - 1, 14);
     c.stroke();
     c.restore();
@@ -170,7 +155,7 @@
     c.shadowColor = 'rgba(5,10,24,0.5)';
     c.shadowBlur = 30;
     rounded(x, y, w, h, h / 2);
-    c.fillStyle = 'rgba(5,9,19,0.94)';
+    c.fillStyle = 'rgba(15,26,49,0.92)';
     c.fill();
     c.shadowColor = 'transparent';
     c.strokeStyle = 'rgba(242,195,139,0.35)';
@@ -195,7 +180,7 @@
     const x = OW - w - 40;
     const y = OH - 80;
     rounded(x, y, w, 44, 22);
-    c.fillStyle = 'rgba(5,9,19,0.9)';
+    c.fillStyle = 'rgba(15,26,49,0.85)';
     c.fill();
     c.fillStyle = APRICOT;
     // Fast-forward mark.
@@ -299,12 +284,6 @@
       c.fillStyle = '#D3CBBC';
       c.font = `500 28px ${FONT}`;
       c.fillText('Pose tracking in the browser  ·  Gemini  ·  Tiger Data  ·  Auth0', OW / 2, OH / 2 + 136);
-      c.globalAlpha = a * out((t - 0.9) / 0.6);
-      if (fox) c.drawImage(fox, OW / 2 - 150, OH - 196, 56, 56);
-      c.fillStyle = CREAM;
-      c.font = `600 28px ${FONT}`;
-      c.textAlign = 'left';
-      c.fillText('Made by Annontrix', OW / 2 - 80, OH - 158);
       c.restore();
     }
   }
@@ -315,7 +294,7 @@
     const a = out(b.age / 0.3);
     c.save();
     c.globalAlpha = a;
-    c.fillStyle = INK_BG;
+    c.fillStyle = '#0B1428';
     c.fillRect(0, 0, OW, OH);
     c.restore();
     plateFrame(a * 0.8);
@@ -366,12 +345,6 @@
       c.fillStyle = '#D3CBBC';
       c.font = `500 30px ${FONT}`;
       c.fillText('Pose tracking in the browser  ·  Gemini  ·  Tiger Data  ·  Auth0', OW / 2, OH / 2 + 80);
-      c.globalAlpha = a * out((t - 0.8) / 0.6);
-      if (fox) c.drawImage(fox, OW / 2 - 150, OH - 170, 56, 56);
-      c.fillStyle = CREAM;
-      c.font = `600 28px ${FONT}`;
-      c.textAlign = 'left';
-      c.fillText('Made by Annontrix', OW / 2 - 80, OH - 132);
     }
     c.restore();
   }

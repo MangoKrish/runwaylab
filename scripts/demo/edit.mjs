@@ -123,10 +123,20 @@ if (SYNC) {
   const sections = secondEnd
     ? [[0, WALK_AT, INTRO, SYNC.walk], [WALK_AT, WALL_AT, SYNC.walk, secondEnd], [WALL_AT, spans.length, SYNC.wall, SYNC.length - OUTRO]]
     : [[0, WALK_AT, INTRO, SYNC.walk], [WALK_AT, spans.length, SYNC.walk, SYNC.length - OUTRO]];
+  // The two waits (the analysis bar and Gemini thinking) get a fixed time on screen, however long they really took,
+  // so a slow API call does not speed up the walk. Everything else in the section shares what is left.
+  const WAITS = new Map([[7, 2.0], [9, 2.4]]);
+  for (const [i, secs] of WAITS) spans[i][2] = (spans[i][1] - spans[i][0]) / secs;
   for (const [a, b, from, to] of sections) {
-    const natural = spans.slice(a, b).reduce((sum, [f, t, v]) => sum + (t - f) / v, 0);
-    const k = natural / (to - from);
-    for (let i = a; i < b; i++) spans[i][2] *= k;
+    const free = [];
+    let fixed = 0;
+    for (let i = a; i < b; i++) {
+      if (WAITS.has(i)) fixed += WAITS.get(i);
+      else free.push(i);
+    }
+    const natural = free.reduce((sum, i) => sum + (spans[i][1] - spans[i][0]) / spans[i][2], 0);
+    const k = natural / (to - from - fixed);
+    for (const i of free) spans[i][2] *= k;
   }
 }
 const sectionStart = (i) => (SYNC?.wall && i === 11 ? SYNC.wall : null);
@@ -307,7 +317,6 @@ async function main() {
     await chrome.evaluate(`window.DEMO = ${JSON.stringify({ OW, OH, WIN, CSS_W, CSS_H, TITLE_H })}; true`);
     await chrome.evaluate(`Promise.all(['700 100px "Be Vietnam Pro"', '600 100px "Be Vietnam Pro"', '500 100px "Be Vietnam Pro"', '600 100px "Bodoni Moda"', 'italic 400 100px "Bodoni Moda"', 'italic 600 100px "Bodoni Moda"'].map((f) => document.fonts.load(f))).then(() => true)`);
     await chrome.evaluate(`${fs.readFileSync(path.join(HERE, 'page.js'), 'utf8')}; true`);
-    await chrome.evaluate('loadFox()');
     const draw = async (f) => {
       const s = stateAt(f);
       s.src = remap.get(s.src);

@@ -576,10 +576,6 @@
   .rw-foot__col a:hover { color: var(--stage-accent); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--stage-accent); }
   .rw-foot__col p:not(.rw-foot__head) { margin: 0; max-width: 34ch; font-size: var(--t-small); font-weight: 400; letter-spacing: 0; line-height: 1.55; color: var(--stage-ink-2); }
   .rw-foot__base { display: flex; justify-content: space-between; align-items: center; gap: var(--s-3) var(--s-5); flex-wrap: wrap; padding-top: var(--s-4); border-top: 1px solid var(--stage-hair); color: var(--stage-ink-2); }
-  .rw-foot__credit { display: inline-flex; align-items: center; gap: 10px; min-height: var(--tap); color: var(--stage-ink-2); text-decoration: none; }
-  .rw-foot__credit:hover { color: var(--stage-ink); }
-  .rw-foot__credit:hover span { text-decoration: underline; text-underline-offset: 3px; }
-  .rw-foot__fox { flex: none; width: 24px; height: 24px; border-radius: 6px; }
   .rw-foot__meta { margin: 0; color: var(--stage-ink-2); }
   .rw-foot__meta i { font-family: var(--f-display); font-size: 1rem; color: var(--stage-ink); }
   @media (max-width: 760px) {

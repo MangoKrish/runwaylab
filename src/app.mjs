@@ -6,16 +6,14 @@ import { studioScreen } from './ui/studio.mjs';
 import { reviewScreen } from './ui/review.mjs';
 import { historyScreen } from './ui/history.mjs';
 import { wallScreen, wallWalkScreen } from './ui/wall.mjs';
-import { foxMark } from './ui/fox.mjs';
 import { signIn, signOut, wallInfo } from './wall/client.mjs';
 
 function newId() {
   return crypto.randomUUID?.() ?? `walk-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-/** The back cover: the name set large on the stage, a few links, and the credit. */
-function credit() {
-  const link = h('a', { class: 'rw-foot__credit', href: 'https://annontrix.vercel.app', target: '_blank', rel: 'noopener noreferrer' }, foxMark(), h('span', null, 'Made by Annontrix'));
+/** The back cover: the name set large on the stage, a few links, and a line about the event. */
+function backCover() {
   const col = (head, body) => h('div', { class: 'rw-foot__col' }, h('p', { class: 'rw-foot__head' }, head), body);
   const li = (href, label) => h('li', null, h('a', { href }, label));
   return h('footer', { class: 'rw-foot rw-on-stage' },
@@ -24,7 +22,7 @@ function credit() {
       col('Pages', h('ul', null, li('#/studio', 'New walk'), li('#/wall', 'The wall'), li('#/history', 'Saved walks'))),
       col('What it is', h('p', null, 'A game and a measurement toy, not a casting tool. The score says how close a walk came to a runway walk on these rules.')),
       col('Your video', h('p', null, 'Stays in this browser. Only the pixelated stills for the judge, and what you choose to post, ever leave it.'))),
-    h('div', { class: 'rw-foot__base' }, link, h('p', { class: 'rw-foot__meta' }, h('i', null, 'Programme'), ' · Built for HackTrent 2026')));
+    h('div', { class: 'rw-foot__base' }, h('p', { class: 'rw-foot__meta' }, h('i', null, 'Programme'), ' · Built for HackTrent 2026')));
 }
 
 /**
@@ -129,7 +127,7 @@ export function start(root, base) {
   clear(root).append(
     h('header', { class: 'rw-top' }, brand(), nav, themeSwitch()),
     main,
-    credit(),
+    backCover(),
   );
 
   let current = null;
