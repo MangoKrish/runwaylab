@@ -55,13 +55,13 @@
 @keyframes rw-spin { to { rotate: 360deg; } }
 
 /* the stamp in the corner of Plate I */
-.rw-stamp { position: absolute; z-index: 9; right: 14px; top: 14px; width: clamp(84px, 22%, 124px); height: auto; animation: rw-spin 48s linear infinite; }
+.rw-stamp { position: absolute; z-index: 9; left: 16px; bottom: 16px; width: clamp(84px, 22%, 124px); height: auto; animation: rw-spin 48s linear infinite; }
 .rw-stamp text { font-family: var(--f-text); }
 .rw-hero__lede { max-width: 36ch; font-size: var(--t-lede); line-height: 1.5; color: var(--ink-2); }
 .rw-hero .rw-hero__actions { margin-top: var(--s-6); }
 
 /* Plate I: the picture with its key beside it; the canvas draws leader lines to each readout */
-.rw-hero__plate { display: grid; grid-template-columns: minmax(0, 1fr) 176px; margin: 0; overflow: hidden; }
+.rw-hero__plate { display: grid; grid-template-columns: minmax(0, 1fr) 200px; margin: 0; overflow: hidden; }
 .rw-hero__picture { position: relative; aspect-ratio: 4 / 5; min-height: 380px; background: var(--stage); }
 .rw-hero__canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .rw-hero__key { display: grid; gap: var(--s-4); align-content: center; padding: var(--s-7) var(--s-5) var(--s-5) var(--s-4); background: var(--stage); border-left: 1px solid var(--stage-hair); color: var(--stage-ink); }
@@ -75,9 +75,10 @@
 .rw-hero__readout:nth-child(3) { animation-delay: 120ms; }
 .rw-hero__readout:nth-child(4) { animation-delay: 180ms; }
 .rw-hero__readout dt { font-size: var(--t-caption); font-weight: 500; letter-spacing: 0.01em; color: var(--stage-ink-2); }
-.rw-hero__readout dd { font-family: var(--f-display); font-size: 1.375rem; font-weight: 600; font-variation-settings: 'opsz' 24; line-height: 1.15; color: var(--stage-ink); white-space: nowrap; font-variant-numeric: tabular-nums lining-nums; }
+.rw-hero__readout dd { font-family: var(--f-display); font-size: 1.375rem; font-weight: 600; font-variation-settings: 'opsz' 24; line-height: 1.15; color: var(--stage-ink); font-variant-numeric: tabular-nums lining-nums; }
 .rw-hero__readout dd .rw-num { font-size: inherit; }
-.rw-hero__readout .rw-unit { color: var(--stage-ink-2); }
+.rw-hero__readout .rw-unit { display: block; margin-top: 2px; font-size: var(--t-caption); color: var(--stage-ink-2); }
+.rw-hero__readout--deg .rw-unit { display: inline; margin: 0; font-size: inherit; }
 .rw-hero__caption { font-family: var(--f-display); font-style: italic; font-size: 0.9375rem; line-height: 1.4; color: var(--stage-ink-2); }
 
 /* The selvedge: four facts in one ruled strip, ink rules outside and a gold hairline inside each ------------- */

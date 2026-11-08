@@ -358,8 +358,10 @@ export function homeScreen(root) {
     }
     const ys = {};
     for (const item of items) {
-      const value = item.querySelector('dd').getBoundingClientRect();
-      ys[item.dataset.at] = value.top + value.height / 2 - box.top;
+      // The unit sits on its own line under the number, so the leader points at the number's line.
+      const dd = item.querySelector('dd');
+      const value = dd.getBoundingClientRect();
+      ys[item.dataset.at] = value.top + parseFloat(getComputedStyle(dd).fontSize) * 0.6 - box.top;
     }
     scene.setReadoutX(column.left - box.left, ys);
   };
@@ -371,7 +373,7 @@ export function homeScreen(root) {
   const labels = setTimeout(() => {
     if (!alive) return;
     const callouts = sceneCallouts();
-    readouts.replaceChildren(...callouts.map((c) => h('div', { class: 'rw-hero__readout', 'data-at': c.at },
+    readouts.replaceChildren(...callouts.map((c) => h('div', { class: `rw-hero__readout${c.unit === '°' ? ' rw-hero__readout--deg' : ''}`, 'data-at': c.at },
       h('dt', null, c.label),
       h('dd', null, num(c.num, c.unit)))));
     scene.setCallouts(callouts);
