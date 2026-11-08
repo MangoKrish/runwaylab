@@ -55,14 +55,16 @@
 @keyframes rw-spin { to { rotate: 360deg; } }
 
 /* the stamp in the corner of Plate I */
-.rw-stamp { position: absolute; z-index: 9; left: 16px; bottom: 16px; width: clamp(84px, 22%, 124px); height: auto; animation: rw-spin 48s linear infinite; }
+.rw-stamp { position: absolute; z-index: 9; left: 18px; bottom: 18px; width: clamp(120px, 31%, 176px); height: auto; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45)); }
+.rw-stamp__spin { transform-box: view-box; transform-origin: 100px 100px; animation: rw-spin 60s linear infinite; }
 .rw-stamp text { font-family: var(--f-text); }
 .rw-hero__lede { max-width: 36ch; font-size: var(--t-lede); line-height: 1.5; color: var(--ink-2); }
 .rw-hero .rw-hero__actions { margin-top: var(--s-6); }
 
 /* Plate I: the picture with its key beside it; the canvas draws leader lines to each readout */
 .rw-hero__plate { display: grid; grid-template-columns: minmax(0, 1fr) 200px; margin: 0; overflow: hidden; }
-.rw-hero__picture { position: relative; aspect-ratio: 4 / 5; min-height: 380px; background: var(--stage); }
+/* the picture fills its whole cell, as tall as the key beside it, so the plate has no empty band under the floor */
+.rw-hero__picture { position: relative; align-self: stretch; height: 100%; min-height: 440px; background: var(--stage); }
 .rw-hero__canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .rw-hero__key { display: grid; gap: var(--s-4); align-content: center; padding: var(--s-7) var(--s-5) var(--s-5) var(--s-4); background: var(--stage); border-left: 1px solid var(--stage-hair); color: var(--stage-ink); }
 .rw-hero__figtitle { font-size: var(--t-caption); line-height: 1.45; color: var(--stage-ink-2); }
@@ -77,8 +79,10 @@
 .rw-hero__readout dt { font-size: var(--t-caption); font-weight: 500; letter-spacing: 0.01em; color: var(--stage-ink-2); }
 .rw-hero__readout dd { font-family: var(--f-display); font-size: 1.375rem; font-weight: 600; font-variation-settings: 'opsz' 24; line-height: 1.15; color: var(--stage-ink); font-variant-numeric: tabular-nums lining-nums; }
 .rw-hero__readout dd .rw-num { font-size: inherit; }
-.rw-hero__readout .rw-unit { display: block; margin-top: 2px; font-size: var(--t-caption); color: var(--stage-ink-2); }
-.rw-hero__readout--deg .rw-unit { display: inline; margin: 0; font-size: inherit; }
+/* the unit follows its number, small, and drops to the next line only when the column is too narrow for both */
+.rw-hero__readout dd .rw-num { display: inline-flex; flex-wrap: wrap; align-items: baseline; column-gap: 5px; }
+.rw-hero__readout .rw-unit { font-size: var(--t-caption); color: var(--stage-ink-2); }
+.rw-hero__readout--deg .rw-unit { font-size: inherit; color: var(--stage-ink); margin-left: -5px; }
 .rw-hero__caption { font-family: var(--f-display); font-style: italic; font-size: 0.9375rem; line-height: 1.4; color: var(--stage-ink-2); }
 
 /* The selvedge: four facts in one ruled strip, ink rules outside and a gold hairline inside each ------------- */
@@ -259,7 +263,7 @@
 .rw-js-reveal [data-reveal]:not(.is-revealed) .rw-dots__dot { transform: scale(0); }
 
 @media (prefers-reduced-motion: reduce) {
-  .rw-hero__line, .rw-hero__readout, .rw-stamp, .rw-hero__accent::after { animation: none; }
+  .rw-hero__line, .rw-hero__readout, .rw-stamp__spin, .rw-hero__accent::after { animation: none; }
   .rw-js-reveal [data-reveal], .rw-js-reveal [data-reveal] > *, .rw-dots__zone, .rw-dots__dot { transition: none; }
 }
 

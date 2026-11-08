@@ -35,7 +35,9 @@ function seeded(seed) {
 function viewFor(W, H, dpr) {
   const narrow = W / H < 1;
   return narrow
-    ? { W, H, dpr, narrow, vx: W * 0.5, hy: H * 0.44, f: H * 1.3 }
+    // In a tall frame the horizon sits a little high and the lens is a little long, so the figure fills the plate at
+    // its nearest instead of leaving an empty floor under it.
+    ? { W, H, dpr, narrow, vx: W * 0.5, hy: H * 0.4, f: H * 1.5 }
     : { W, H, dpr, narrow, vx: W * 0.64, hy: H * 0.44, f: H * 1.42 };
 }
 
@@ -386,7 +388,8 @@ function paintLeaders(ctx, view, pose, depthOf, callouts, readout, strength) {
   if (!callouts.length || !readout || strength <= 0) return;
   const anchors = anchorsFor(view, pose, depthOf);
   const { dpr } = view;
-  const endX = (readout.x - 14) * dpr;
+  // The column starts past the picture's edge, so the line stops just inside it, with its end dot whole.
+  const endX = Math.min(readout.x - 14, view.W / dpr - 6) * dpr;
   ctx.save();
   ctx.globalAlpha = strength;
   ctx.lineWidth = dpr;

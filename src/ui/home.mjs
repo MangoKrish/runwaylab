@@ -80,19 +80,45 @@ const need = (glyph, title, text) => h('li', { class: 'rw-needs__item' },
   h('h4', null, title),
   h('p', null, text));
 
-/** A round stamp on the plate, like the maker's mark on a programme. It turns slowly; reduced motion holds it still. */
+/**
+ * The seal on Plate I, like the maker's mark on a programme: a ring of footlights, the promise set round the band,
+ * and in the middle a little runway with four footprints landing on one line, which is what the score rewards most.
+ * The outer rings turn slowly; the runway in the middle holds still. Reduced motion holds all of it.
+ */
 function stamp() {
   const svg = document.createElementNS(SVG, 'svg');
   svg.setAttribute('class', 'rw-stamp');
-  svg.setAttribute('viewBox', '0 0 140 140');
+  svg.setAttribute('viewBox', '0 0 200 200');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('focusable', 'false');
-  svg.innerHTML = '<circle cx="70" cy="70" r="69" fill="var(--stage-2)" stroke="var(--stage-accent)" stroke-width="1.5"/>'
-    + '<circle cx="70" cy="70" r="59" fill="none" stroke="var(--stage-hair)"/>'
-    + '<path id="rw-stamp-path" d="M70 70m-50 0a50 50 0 1 1 100 0a50 50 0 1 1-100 0" fill="none"/>'
-    + '<text font-size="11.5" font-weight="600" letter-spacing="2.2" fill="var(--stage-ink)"><textPath href="#rw-stamp-path" textLength="302">NOTHING UPLOADED · STAYS ON THIS DEVICE ·</textPath></text>'
-    + '<circle cx="70" cy="70" r="4" fill="var(--stage-accent)"/>'
-    + '<path d="M70 52v10M70 78v10M52 70h10M78 70h10" stroke="var(--stage-accent)" stroke-width="1.5" stroke-linecap="round"/>';
+  const lights = Array.from({ length: 40 }, (_, i) => {
+    const a = (i / 40) * Math.PI * 2;
+    return `<circle cx="${(100 + 95 * Math.cos(a)).toFixed(2)}" cy="${(100 + 95 * Math.sin(a)).toFixed(2)}" r="${i % 2 ? 1.4 : 2.3}"/>`;
+  }).join('');
+  const ticks = Array.from({ length: 60 }, (_, i) => {
+    const a = (i / 60) * Math.PI * 2;
+    const [r1, r2] = i % 5 ? [55, 58] : [53, 58];
+    const p = (r) => `${(100 + r * Math.cos(a)).toFixed(2)} ${(100 + r * Math.sin(a)).toFixed(2)}`;
+    return `M${p(r1)}L${p(r2)}`;
+  }).join('');
+  // Footprints from near to far, left and right of the centre line but landing on it: the narrow line of a catwalk.
+  // Each print is a shoe sole seen from above: the ball and a separate heel, toed out a few degrees.
+  const prints = [[95, 140, 1, -8], [105, 121, 0.84, 8], [96.6, 105, 0.7, -8], [103.4, 92, 0.58, 8]]
+    .map(([x, y, s, r]) => `<g transform="translate(${x} ${y}) rotate(${r}) scale(${s})"><ellipse cx="0" cy="-3.6" rx="3.5" ry="5.2"/><ellipse cx="0" cy="6.2" rx="2.7" ry="3"/></g>`).join('');
+  svg.innerHTML = '<g class="rw-stamp__spin">'
+      + `<g fill="var(--stage-accent)">${lights}</g>`
+      + '<circle cx="100" cy="100" r="87" fill="var(--stage-2)" stroke="var(--stage-accent)" stroke-width="1.6"/>'
+      + '<circle cx="100" cy="100" r="82" fill="none" stroke="var(--stage-accent)" stroke-width="0.6" stroke-dasharray="1.5 3.2"/>'
+      + '<path id="rw-stamp-path" d="M100 100m-69 0a69 69 0 1 1 138 0a69 69 0 1 1-138 0" fill="none"/>'
+      + '<text font-size="12.5" font-weight="600" letter-spacing="2.4" fill="var(--stage-ink)"><textPath href="#rw-stamp-path" textLength="424" lengthAdjust="spacingAndGlyphs">NOTHING UPLOADED · STAYS ON THIS DEVICE · </textPath></text>'
+      + `<path d="${ticks}" stroke="var(--stage-ink-2)" stroke-width="1" fill="none"/>`
+    + '</g>'
+    + '<circle cx="100" cy="100" r="51" fill="#0B1428" stroke="var(--stage-accent)" stroke-width="1.2"/>'
+    + '<path d="M80 152 L95.5 62 h9 L120 152 Z" fill="#1B2C50"/>'
+    + '<path d="M80 152 L95.5 62 M120 152 L104.5 62" stroke="var(--stage-ink-2)" stroke-width="0.9" fill="none"/>'
+    + '<path d="M100 150 V64" stroke="var(--stage-accent)" stroke-width="0.9" stroke-dasharray="3 3" fill="none"/>'
+    + '<rect x="93" y="54" width="14" height="8" rx="1" fill="var(--stage-accent)" opacity="0.9"/>'
+    + `<g fill="var(--stage-ink)">${prints}</g>`;
   return svg;
 }
 
