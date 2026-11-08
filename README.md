@@ -1,10 +1,30 @@
 # RunwayLab
 
-Walk toward a camera and back. Pose tracking measures how you move, on your own device. Gemini judges your presence and style. You get a score out of 100, the reasoning behind every point, and the walk closest to yours.
+**Walk up, turn, get judged.** Your webcam is the runway, the code keeps score, and Gemini has opinions.
 
-Built at HackTrent 2026.
+**[Try it at runwaylab-mu.vercel.app](https://runwaylab-mu.vercel.app)** · Built at HackTrent 2026
 
-![The home page: a figure walks a lit runway toward you, with its tracked points drawn on its body.](docs/home.jpg)
+Walk toward a camera and back. Pose tracking measures how you move, on your own device. Gemini judges your presence and style. You get a score out of 100, the reasoning behind every point, and the walk closest to yours. If you like, your score and skeleton go on the wall, a live leaderboard of everyone who walked.
+
+![RunwayLab: can code judge your walk? A walker's tracked skeleton, traced over several steps.](docs/screenshots/01-cover.jpg)
+
+| | |
+|---|---|
+| ![The home page, with a figure walking a lit runway and the points the tracker measures.](docs/screenshots/02-home.jpg) | ![The studio: a walker tracked live, with the skeleton drawn on the camera picture.](docs/screenshots/04-the-studio.jpg) |
+| **Home.** A runway judge that runs in your browser. | **The studio.** 26 body points tracked live as you walk. |
+| ![The result: 58 out of 100, "Warming up", with Gemini's verdict.](docs/screenshots/05-the-result.jpg) | ![The breakdown: the closest walk, the measured 70 points and Gemini's 30.](docs/screenshots/06-the-breakdown.jpg) |
+| **The result.** A score out of 100, and Gemini's verdict. | **The breakdown.** Every point explained. |
+| ![The wall: walks posted, averages and a grid of walkers with their scores.](docs/screenshots/07-the-wall.jpg) | ![A walker's page on the wall, with their edit playing beside the score.](docs/screenshots/08-walker-edits.jpg) |
+| **The wall.** A live leaderboard, stored in Tiger Data. | **Walker edits.** Every walker who agreed gets an edit of their walk. |
+
+## Built with
+
+- **Pose tracking in the browser:** RTMPose (26 body points) and RTMDet-nano through ONNX Runtime Web on WebGPU, with MediaPipe Pose Landmarker as the fallback. WebCodecs and mp4box.js read every frame of a recording.
+- **[Gemini](https://ai.google.dev/):** the judge for presence and style, from pixelated stills only.
+- **[Tiger Data](https://www.tigerdata.com/):** TimescaleDB for the wall, with a hypertable, compression and a continuous aggregate behind the stats.
+- **[Auth0](https://auth0.com/):** sign-in for posting to the wall. It asks for a name, not an email.
+- **[Vercel](https://vercel.com/):** the static site and the server functions in `api/`.
+- **Plain web:** ES modules with no framework and no build step. Bodoni Moda and Be Vietnam Pro, self-hosted.
 
 ## Run it
 
@@ -83,7 +103,7 @@ The foot scale gives full marks at 2.5% of height and none at 10%. Ordinary walk
 computer:
 
 ```bash
-npm run showreel -- ~/Downloads/2026-11-07_0827_5ee314ce.webm
+npm run showreel -- walk.webm
 npm run showreel -- walk.webm --music song.mp3 --drop 62.5 --palette ember --socials @name
 npm run showreel -- walk.webm --intro "NO JUDGES.|JUST|MATH." --turn "PIVOT" --preview
 ```
@@ -98,6 +118,22 @@ phonk mixes in Downloads), a palette not used in the last two edits (violet, emb
 recent edit used. Every caption can be set by hand. Socials come from `--socials` or the `.json` saved beside a
 recording, and appear as a tag. `--preview` writes 12 stills instead of a video. Edits and their history go to
 `reels/`, which git and Vercel ignore. Music from the mixes is not cleared for posting.
+
+### The demo film
+
+`npm run demo:record` drives the site in headless Chrome through a whole walk, using a recorded clip as the camera,
+and logs every click, scroll and moment worth zooming to. `npm run demo:edit` turns that into a 1920 × 1080, 60 fps
+film: the site in a browser window, eased zooms, a drawn cursor, short captions and speed-ups over the waits.
+
+```bash
+npm run demo:record -- walk.mp4 --out reels/.demo
+npm run demo:edit -- --in reels/.demo --out reels/demo.mp4 --music track.mp3
+```
+
+With `--music`, the cut is fitted to the track instead of the other way round. It finds where the track reaches full
+level and starts the walk on that beat, turns a break in the music into a title card, brings the wall in on the beat
+that ends the break, and snaps camera moves and captions to the beat grid. The waits for the analysis and for Gemini
+get a fixed time on screen, so a slow answer does not speed up the walk. The recording makes one real Gemini call.
 
 ## Making a reel from your walks
 
