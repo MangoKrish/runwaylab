@@ -39,9 +39,9 @@
 <g fill="currentColor"><circle cx="463" cy="507" r="2.4"/><circle cx="482" cy="529" r="2.4"/><circle cx="477" cy="517" r="2.4"/><circle cx="496" cy="545" r="2.4"/></g>
 </g>
 <g font-family="'Be Vietnam Pro', system-ui, sans-serif" fill="currentColor">
-<text x="80" y="206" font-size="26" font-weight="600" style="fill:var(--accent)">The AI runway judge</text>
-<text x="76" y="318" font-size="116" font-weight="700" letter-spacing="-5">RunwayLab</text>
-<text x="80" y="392" font-size="42" font-weight="600" letter-spacing="-1">Walk up. Turn. <tspan style="fill:var(--accent)">Get judged.</tspan></text>
+<text x="80" y="206" font-size="20" font-weight="600" letter-spacing="3" style="fill:var(--accent)">THE RUNWAY JUDGE · HACKTRENT 2026</text>
+<text x="76" y="318" font-family="'Bodoni Moda', Didot, Georgia, serif" font-size="124" font-weight="600" letter-spacing="0">RunwayLab</text>
+<text x="80" y="396" font-family="'Bodoni Moda', Didot, Georgia, serif" font-size="46" font-weight="500" letter-spacing="0">Walk up. Turn. <tspan font-style="italic" font-weight="400" style="fill:var(--accent)">Get judged.</tspan></text>
 <text x="80" y="560" font-size="23" font-weight="400" fill="#B0A899">Measured on your device. Judged by Gemini.</text>
 </g>
 </svg>

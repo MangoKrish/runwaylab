@@ -197,6 +197,7 @@ camera or upload → recording → tracker → frames.mjs → phases.mjs → met
 - `src/ui`: the screens. `scene.mjs` draws the home page's picture from the same pinhole camera model the measurements assume.
 - `api`: small server functions for Vercel. `scripts/dev.mjs` runs the same files locally.
 - `vendor`: everything the page loads, including models and fonts, so nothing comes from another site.
+- `docs/design/direction.md`: the look, called the Programme: paper and navy ink by day, navy and cream by night, Bodoni Moda for the display and the score, framed plates with a print shadow.
 
 The wall recomputes the measured half on the server from the posted skeleton, and only accepts judge results signed by this server, so a score on the wall cannot be typed in.
 

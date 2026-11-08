@@ -272,7 +272,8 @@ async function main() {
     check('opens', await tab.until(tab.hasText('This is a sample'), 'sample banner'));
     await tab.until('!!document.querySelector(".rw-score__num")', 'score', 5000);
     let text = await tab.text();
-    check('labeled as synthetic', text.includes('Synthetic figure') && text.includes('Sample: synthetic data'));
+    // Labels are set in capitals by the stylesheet, so the page's text is compared without case.
+    check('labeled as synthetic', /synthetic figure/i.test(text) && /sample: synthetic data/i.test(text));
     check('judge text labeled as hand-written', text.includes('written by hand'));
     check('shows a sample score', /Sample score, from synthetic data\s*\d+/i.test(text));
     check('offers no save', !text.includes('Save to this device'));
@@ -379,7 +380,7 @@ async function main() {
       check('the total is the sum of the two halves', shownTotal === summed, `${summed} = ${shownTotal}`);
       check('the measured half matches its criteria, and says so when scaled', await measuredBarsAgree());
       check('the judge awards up to 30', (await tab.js(`document.querySelectorAll('.rw-breakdown__group').length`)) === 2 && text.includes('28/30'));
-      check('a grade and a next step', /Front row silence|Runway ready|Has a walk|Warming up|Just passing through/.test(text) && text.includes('The judge suggests'));
+      check('a grade and a next step', /Front row silence|Runway ready|Has a walk|Warming up|Just passing through/.test(text) && /the judge suggests/i.test(text));
       check('walk match shown without a percentage', text.includes('Mona Tougaard') && !/\d+\s*%\s*(match|similar)/i.test(text));
       check('measured and judge halves are labeled apart', text.includes('Measured from your movement') && text.includes("Gemini's opinion"));
       const sent = gemini.requests[0]?.body;

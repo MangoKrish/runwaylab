@@ -46,12 +46,16 @@ export { icon, artSvg } from '../art/inline.mjs';
 
 /**
  * A section head: eyebrow, title and an optional lede, with the runway rule on top.
+ * @param options.no A number for the margin, like a look in a show programme: `01` in the serif, the eyebrow under it.
  * @param options.action An element (a link or button) placed at the right on wide screens.
  */
-export function sectionHead({ eyebrow, title, lede, level = 'h2', id, action } = {}) {
-  return h('div', { class: action ? 'rw-sechead rw-sechead--row' : 'rw-sechead' },
+export function sectionHead({ eyebrow, title, lede, level = 'h2', id, action, no } = {}) {
+  const classes = ['rw-sechead', action ? 'rw-sechead--row' : '', no ? 'rw-sechead--no' : ''].filter(Boolean).join(' ');
+  return h('div', { class: classes },
+    no ? h('p', { class: 'rw-sechead__no', 'aria-hidden': 'true' }, h('b', null, String(no).padStart(2, '0')), eyebrow ? h('span', null, eyebrow) : null) : null,
     h('div', { class: 'rw-sechead__text' },
-      eyebrow ? h('p', { class: 'rw-eyebrow' }, eyebrow) : null,
+      eyebrow && !no ? h('p', { class: 'rw-eyebrow' }, eyebrow) : null,
+      no && eyebrow ? h('p', { class: 'rw-sr' }, eyebrow) : null,
       h(level, { class: 'rw-title', id }, title),
       lede ? h('p', { class: 'rw-lede' }, lede) : null),
     action ? h('div', { class: 'rw-sechead__action' }, action) : null);

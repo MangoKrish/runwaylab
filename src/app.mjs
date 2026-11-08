@@ -15,7 +15,34 @@ function newId() {
 
 function credit() {
   const link = h('a', { class: 'rw-foot__credit', href: 'https://annontrix.vercel.app', target: '_blank', rel: 'noopener noreferrer' }, foxMark(), h('span', null, 'Made by Annontrix'));
-  return h('footer', { class: 'rw-foot' }, link, h('p', { class: 'rw-foot__meta' }, 'Built for HackTrent 2026'));
+  return h('footer', { class: 'rw-foot' }, link, h('p', { class: 'rw-foot__meta' }, h('i', null, 'Programme'), ' · Built for HackTrent 2026'));
+}
+
+/**
+ * The theme switch: Matinée (paper) or Evening (navy). Off means the system setting decides; the choice is kept in
+ * this browser, and src/theme.js applies it before the first paint on the next visit.
+ */
+function themeSwitch() {
+  const KEY = 'rw-theme';
+  const dark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  const current = () => document.documentElement.getAttribute('data-theme') || (dark() ? 'dark' : 'light');
+  const text = h('span', { class: 'rw-theme__text' });
+  const el = h('button', { type: 'button', class: 'rw-theme', role: 'switch', 'aria-checked': 'false', 'aria-label': 'Evening setting' },
+    h('span', { class: 'rw-theme__track', 'aria-hidden': 'true' }), text);
+  const draw = () => {
+    const evening = current() === 'dark';
+    el.setAttribute('aria-checked', evening ? 'true' : 'false');
+    text.textContent = evening ? 'Evening' : 'Matinée';
+  };
+  el.addEventListener('click', () => {
+    const next = current() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem(KEY, next); } catch { /* no storage: the choice lasts this visit */ }
+    draw();
+  });
+  window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+  draw();
+  return el;
 }
 
 /** A header link with a shorter label for phones, so brand and nav always fit on one row. Its name stays whole. */
@@ -33,7 +60,8 @@ function brand() {
     svg.querySelector('style')?.remove();
     holder.replaceWith(svg);
   }).catch(() => {});
-  return h('a', { class: 'rw-brand', href: '#/' }, holder, h('span', null, 'RunwayLab'));
+  return h('a', { class: 'rw-brand', href: '#/' }, holder,
+    h('span', { class: 'rw-brand__text' }, h('span', { class: 'rw-brand__name' }, 'RunwayLab'), h('span', { class: 'rw-brand__sub' }, 'The runway judge')));
 }
 
 /**
@@ -90,7 +118,7 @@ export function start(root, base) {
   const who = account();
   nav.append(who.el);
   clear(root).append(
-    h('header', { class: 'rw-top' }, brand(), nav),
+    h('header', { class: 'rw-top' }, brand(), nav, themeSwitch()),
     main,
     credit(),
   );

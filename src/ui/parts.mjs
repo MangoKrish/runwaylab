@@ -39,8 +39,8 @@ export function breakdown(measured, judge, { sample = false, model = null, calib
     groups.push(h('section', { class: 'rw-breakdown__group rw-breakdown__group--measured' },
       groupHead(sample ? 'Measured from synthetic movement' : 'Measured from your movement', measured.points, measured.max, 'Measured, 70 points'),
       h('p', { class: 'rw-breakdown__note' }, calibrated
-        ? 'Calibrated to your height, how you stood, and this camera. Everyone is held to the same scale.'
-        : 'No standing moment in this clip, so this uses typical body proportions.'),
+        ? 'Calibrated to your height, how you stood, and this camera. Everyone is held to the same scale. Open “Why this score” under any line for the measurement behind it.'
+        : 'No standing moment in this clip, so this uses typical body proportions. Open “Why this score” under any line for the measurement behind it.'),
       measured.scaled ? h('p', { class: 'rw-bar__note rw-breakdown__scaled' }, `We could not see your ${measured.scaled.unseen.join(', ').toLowerCase()}, so that is left out rather than marked down. You earned ${measured.scaled.earned} of the ${measured.scaled.seenMax} points we could measure, which is ${measured.points} out of ${measured.max}.`) : null,
       h('div', { class: 'rw-breakdown__bars' },
         measured.parts.map((p, i) => bar(p.label, p.points, p.max, p.note, p.why, p.about, p.seen, { index: i })))));

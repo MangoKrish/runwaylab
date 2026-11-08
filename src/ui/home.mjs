@@ -23,8 +23,8 @@ export function walkRow(walk) {
 
 // The two parts Gemini scores. Its instructions are in api/judge.mjs.
 const OPINION = [
-  { label: 'Presence', max: 15, about: 'Confidence, intent and how you carry yourself.' },
-  { label: 'Style', max: 15, about: 'How your outfit and attitude work together. Conviction beats expensive clothes.' },
+  { key: 'presence', label: 'Presence', max: 15, about: 'Confidence, intent and how you carry yourself.' },
+  { key: 'style', label: 'Style', max: 15, about: 'How your outfit and attitude work together.' },
 ];
 const LARGEST_PART = Math.max(...PARTS.map((p) => p.max), ...OPINION.map((p) => p.max));
 
@@ -42,14 +42,34 @@ function lightIcon() {
   return svg;
 }
 
-const scoreRow = (part, tone, i) => h('li', { class: `rw-points__row rw-points__row--${tone}`, style: `--i:${i}` },
-  h('span', { class: 'rw-points__num rw-num' }, String(part.max)),
-  h('div', { class: 'rw-points__text' },
-    h('h4', { class: 'rw-points__label' }, part.label),
-    h('p', { class: 'rw-points__about' }, part.about),
-    h('div', { class: `rw-bar rw-bar--compact${tone === 'opinion' ? ' rw-bar--opinion' : ''}`, 'aria-hidden': 'true' },
-      h('div', { class: 'rw-bar__track' },
-        h('div', { class: 'rw-bar__fill', style: `width:${(part.max / LARGEST_PART) * 100}%;--i:${i}` })))));
+// One line per part: what counts, in a few words, then how it is measured, behind the toggle.
+const HOW = {
+  footLine: ['Each foot lands near one line.', `Full marks when your feet land within ${RULES.footLine.best}% of your height of each other, side to side, and nothing from ${RULES.footLine.worst}%. Everyday walking is about 5 to 9%.`],
+  rhythm: ['Even steps at a steady speed.', `Step timing and walking speed, each compared with itself. Full marks when steps vary by ${RULES.stepRhythm.best * 100}% or less.`],
+  posture: ['Tall, level and quiet up top.', 'Shoulder rock, shoulder level, trunk sway, bounce and head carriage, each against how you stood still a moment earlier.'],
+  line: ['There and back on one path.', 'How far you drift sideways from a straight path, as a share of your height. The path can point anywhere.'],
+  head: ['A still head over a moving body.', `Head movement side to side. Full marks up to ${RULES.headMovement.best}% of your height, none from ${RULES.headMovement.worst}%.`],
+  arms: ['Relaxed, and the same on both sides.', `Left and right swing compared. Full marks at a balance of ${RULES.armBalance.best} or better.`],
+  turn: ['One clean pivot.', `A turn that takes ${RULES.turnTime.best} seconds or less, without wandering, earns the full marks.`],
+  presence: ['Confidence and intent.', 'How you carry yourself: eyes up, unhurried, owning the floor. Gemini is told to ignore body, face, age, race and gender.'],
+  style: ['Outfit and attitude together.', 'Whether what you wear and how you move agree. Conviction beats expensive clothes.'],
+};
+const scoreRow = (part, tone, i) => {
+  const [hook, how] = HOW[part.key] || [part.about, ''];
+  return h('details', { class: `rw-look rw-look--${tone}`, style: `--i:${i}` },
+    h('summary', { class: 'rw-look__summary' },
+      h('span', { class: 'rw-look__no', 'aria-hidden': 'true' }, String(i + 1).padStart(2, '0')),
+      h('span', { class: 'rw-look__name' }, h('span', { class: 'rw-look__title' }, part.label), h('span', { class: 'rw-look__pts' }, `${part.max} points`)),
+      h('span', { class: 'rw-look__hook' }, hook),
+      h('span', { class: 'rw-look__toggle', 'aria-hidden': 'true' })),
+    h('div', { class: 'rw-look__body' },
+      h('p', null, part.about, ' ', how),
+      h('div', { class: `rw-bar rw-bar--compact${tone === 'opinion' ? ' rw-bar--opinion' : ''}`, 'aria-hidden': 'true' },
+        h('div', { class: 'rw-bar__track' },
+          h('div', { class: 'rw-bar__fill', style: `width:${(part.max / LARGEST_PART) * 100}%;--i:${i}` })))));
+};
+
+const faq = (q, a) => h('details', { class: 'rw-faq__item' }, h('summary', null, h('span', null, q), h('span', { class: 'rw-look__toggle', 'aria-hidden': 'true' })), h('p', { class: 'rw-faq__answer' }, a));
 
 const fairness = (title, text) => h('div', { class: 'rw-fair__item' }, h('h3', null, title), h('p', null, text));
 
@@ -60,12 +80,14 @@ const need = (glyph, title, text) => h('li', { class: 'rw-needs__item' },
   h('h4', null, title),
   h('p', null, text));
 
-const step = (n, glyph, title, text) => h('li', { class: 'rw-step' },
+const step = (n, glyph, title, text, when, gets) => h('li', { class: 'rw-step' },
   h('div', { class: 'rw-step__mark', 'aria-hidden': 'true' },
     h('span', { class: 'rw-step__num' }, String(n)),
+    n === 1 ? h('span', { class: 'rw-step__note' }, 'start here') : null,
     h('span', { class: 'rw-step__icon' }, icon(glyph))),
   h('h3', null, title),
-  h('p', null, text));
+  h('p', null, text),
+  h('p', { class: 'rw-step__tags' }, h('span', { class: 'rw-tag rw-tag--quiet' }, when), h('span', { class: 'rw-tag' }, gets)));
 
 // The measurements that separated professional models from everyone else on real footage.
 const FOOTAGE_ROWS = [
@@ -146,29 +168,35 @@ export function homeScreen(root) {
   const divider = h('div', { class: 'rw-cta__art', 'aria-hidden': 'true' });
 
   root.append(
-    h('section', { class: 'rw-hero rw-on-stage', 'aria-labelledby': 'rw-hero-title' },
-      h('div', { class: 'rw-hero__picture' }, canvas, h('div', { class: 'rw-hero__scrim', 'aria-hidden': 'true' })),
-      h('div', { class: 'rw-hero__inner' },
-        h('div', { class: 'rw-hero__copy' },
-          h('p', { class: 'rw-hero__kicker' }, 'The AI runway judge'),
-          h('h1', { id: 'rw-hero-title', tabindex: '-1' },
-            h('span', { class: 'rw-hero__line' }, 'Walk up.'), h('br', null),
-            h('span', { class: 'rw-hero__line' }, 'Turn.'), h('br', null),
-            h('span', { class: 'rw-hero__line rw-hero__accent' }, 'Get judged.')),
-          h('p', { class: 'rw-hero__lede' }, 'Walk toward the camera and back. We track 26 body landmarks to measure how you really move, Gemini judges your presence and style, and you find out if you have a runway walk.'),
-          h('div', { class: 'rw-actions rw-actions--split rw-hero__actions' },
-            h('a', { class: 'rw-btn rw-btn--solid rw-btn--big rw-actions__full', href: '#/studio' }, 'Start a walk'),
-            h('a', { class: 'rw-btn rw-btn--big', href: '#/review/sample' }, 'See a sample'),
-            h('a', { class: 'rw-btn rw-btn--big rw-hero__wall', href: '#/wall' }, 'See the wall'))),
-        readouts),
-      h('p', { class: 'rw-hero__caption' }, 'Illustration. A made-up figure, not a real person.')),
+    h('section', { class: 'rw-hero', 'aria-labelledby': 'rw-hero-title' },
+      h('div', { class: 'rw-hero__copy' },
+        h('p', { class: 'rw-hero__kicker' }, 'The runway judge'),
+        h('h1', { id: 'rw-hero-title', tabindex: '-1' },
+          h('span', { class: 'rw-hero__line' }, 'Walk up.'), h('br', null),
+          h('span', { class: 'rw-hero__line' }, 'Turn.'), h('br', null),
+          h('span', { class: 'rw-hero__line rw-hero__accent' }, 'Get judged.')),
+        h('p', { class: 'rw-hero__lede' }, 'Walk toward the camera and back. We track 26 body landmarks to measure how you really move, Gemini judges your presence and style, and you find out if you have a runway walk.'),
+        h('p', { class: 'rw-hero__meta' }, 'Two minutes · any camera · your video stays on this device'),
+        h('div', { class: 'rw-actions rw-actions--split rw-hero__actions' },
+          h('a', { class: 'rw-btn rw-btn--solid rw-btn--big rw-actions__full', href: '#/studio' }, 'Start a walk'),
+          h('a', { class: 'rw-btn rw-btn--big', href: '#/review/sample' }, 'See a sample'),
+          h('a', { class: 'rw-btn rw-btn--big rw-hero__wall', href: '#/wall' }, 'See the wall')),
+        h('p', { class: 'rw-action-note' }, 'Nothing is recorded until you press Start, and nothing is uploaded.')),
+      h('figure', { class: 'rw-hero__plate rw-plate rw-on-stage' },
+        h('p', { class: 'rw-plate__label' }, 'Plate ', h('b', null, 'I')),
+        h('div', { class: 'rw-hero__picture' }, canvas),
+        h('figcaption', { class: 'rw-hero__key' },
+          h('p', { class: 'rw-hero__figtitle' }, h('b', null, 'Fig. 1'), ' What the tracker measures on the figure'),
+          readouts,
+          h('p', { class: 'rw-hero__caption' }, 'A made-up figure, not a real person.')))),
 
     h('section', { class: 'rw-section rw-how', 'aria-labelledby': 'rw-how-title' },
-      h('div', { 'data-reveal': '' }, sectionHead({ eyebrow: 'How it works', title: 'Two minutes, three steps', id: 'rw-how-title' })),
+      h('div', { 'data-reveal': '' }, sectionHead({ no: 1, eyebrow: 'How it works', title: 'Two minutes, three steps', id: 'rw-how-title' })),
       h('ol', { class: 'rw-steps', 'data-reveal': '' },
-        step(1, 'walk', 'Walk', 'Stand tall for a moment, then walk up and back to the music, two or three times. Recording starts and stops by itself.'),
-        step(2, 'score', 'Get measured', 'Your foot placement, rhythm, posture, line, arms and turn are worked out on this device, and each walk is measured by itself so one stumble cannot sink you.'),
-        step(3, 'judge', 'Get judged', 'If you agree, Gemini sees a dozen stills with your face pixelated, and gives its opinion. You get your score, the reasoning behind every point, and the walk closest to yours.')),
+        step(1, 'walk', 'Walk', 'Stand tall for a moment, then walk up and back to the music, two or three times. Recording stops by itself.', 'About two minutes', 'A recording on this device'),
+        step(2, 'score', 'Get measured', 'Foot placement, rhythm, posture, line, arms and turn are worked out here, in the browser. Each walk is measured on its own, so one stumble cannot sink you.', 'Under a minute', '70 points, with the reason for each'),
+        step(3, 'judge', 'Get judged', 'If you agree, Gemini sees a dozen stills with your face pixelated and gives its opinion: presence and style, and the walk closest to yours.', 'Optional · about 30 seconds', '30 points and a verdict')),
+      h('p', { class: 'rw-guide' }, 'Not sure you have the room? Six metres of clear floor is enough, and the stage shows your start and turn marks once the camera sees you.'),
       h('div', { class: 'rw-needs__wrap', 'data-reveal': '' },
         h('h3', { class: 'rw-needs__title' }, 'Before you start'),
         h('ul', { class: 'rw-needs' },
@@ -180,6 +208,7 @@ export function homeScreen(root) {
     h('section', { class: 'rw-section rw-score-guide', 'aria-labelledby': 'rw-score-title' },
       h('div', { class: 'rw-score-guide__intro', 'data-reveal': '' },
         sectionHead({
+          no: 2,
           eyebrow: 'Scoring',
           title: 'Most of your score is measured, not opinion',
           id: 'rw-score-title',
@@ -195,14 +224,16 @@ export function homeScreen(root) {
       h('div', { class: 'rw-points' },
         h('div', { class: 'rw-points__group', 'data-reveal': '' },
           h('h3', { class: 'rw-points__head' }, `Measured, ${MEASURED_MAX} points`),
-          h('ul', { class: 'rw-points__list' }, [...PARTS].sort((a, b) => b.max - a.max).map((p, i) => scoreRow(p, 'measured', i)))),
+          h('div', { class: 'rw-looks' }, [...PARTS].sort((a, b) => b.max - a.max).map((p, i) => scoreRow(p, 'measured', i)))),
         h('div', { class: 'rw-points__group', 'data-reveal': '' },
           h('h3', { class: 'rw-points__head' }, `Gemini's opinion, ${JUDGE_MAX} points`),
-          h('ul', { class: 'rw-points__list' }, OPINION.map((p, i) => scoreRow(p, 'opinion', i)))))),
+          h('div', { class: 'rw-looks' }, OPINION.map((p, i) => scoreRow(p, 'opinion', i)))),
+        h('p', { class: 'rw-guide' }, 'On your result, every line has a “Why this score” fold with the measurement behind it.'))),
 
     h('section', { class: 'rw-section rw-proof', 'aria-labelledby': 'rw-proof-title' },
       h('div', { class: 'rw-proof__intro', 'data-reveal': '' },
         sectionHead({
+          no: 3,
           eyebrow: 'Evidence',
           title: 'Checked against real walks',
           id: 'rw-proof-title',
@@ -215,12 +246,13 @@ export function homeScreen(root) {
 
     h('section', { class: 'rw-band rw-on-stage', 'aria-labelledby': 'rw-fair-title' },
       h('div', { class: 'rw-band__inner' },
-        h('div', { 'data-reveal': '' }, sectionHead({ eyebrow: 'Fairness', title: 'The same rules for every body', id: 'rw-fair-title' })),
+        h('div', { 'data-reveal': '' }, sectionHead({ no: 4, eyebrow: 'Fairness', title: 'The same rules for every body', id: 'rw-fair-title' })),
         h('div', { class: 'rw-fair', 'data-reveal': '' },
           fairness('Your height, not your frame', 'Every length is a share of your own height, measured while you stand still. Shoulder width would favour some bodies over others, so it is not used.'),
           fairness('Compared with you', 'Your head and shoulders are judged against how you stood a moment earlier, not against an average person.'),
           fairness('Hidden means left out', 'Long hair, a head covering or a gown costs nothing. What the camera cannot see is left out of your score, never marked down, and the result tells you when that happened.'),
           fairness('Noise is taken off', 'Standing still shows how much this camera and tracker wobble on their own. That amount is taken off what you walked, so their wobble is not counted as yours.')),
+        h('p', { class: 'rw-reassure', 'data-reveal': '' }, 'This is a game. The score says how close your walk came to a runway walk on these rules, not how good you are.'),
         h('details', { class: 'rw-details rw-sources', 'data-reveal': '' },
           h('summary', null, 'Where the numbers come from, and what this cannot do'),
           h('div', { class: 'rw-sources__body' },
@@ -236,11 +268,24 @@ export function homeScreen(root) {
 
     h('section', { class: 'rw-section rw-note rw-privacy', 'aria-labelledby': 'rw-privacy-title', 'data-reveal': '' },
       h('div', { class: 'rw-privacy__head' },
-        h('span', { class: 'rw-privacy__icon' }, icon('device', { className: 'rw-icon rw-icon--lg' })),
+        h('p', { class: 'rw-sechead__no', 'aria-hidden': 'true' }, h('b', null, '05'), h('span', null, 'Privacy')),
         h('h2', { id: 'rw-privacy-title' }, 'Where your walk goes')),
       h('div', { class: 'rw-privacy__body' },
-        h('p', null, 'Your video stays in this browser. It is temporary until you press Save, and it is never uploaded. Only two things can ever leave this device, each only if you choose: pixelated stills for Gemini to judge, and, if you post to the wall, your name, score and skeleton movement.'),
-        h('p', { class: 'rw-privacy__csp' }, 'The browser enforces this: the page is only allowed to connect to its own site.'))),
+        h('dl', { class: 'rw-facts' },
+          h('div', null, h('dt', null, 'Your video'), h('dd', null, 'Stays in this browser. Temporary until you press Save, never uploaded.')),
+          h('div', null, h('dt', null, 'Leaves only if you choose'), h('dd', null, 'Pixelated stills, if you ask Gemini to judge. Your name, score and skeleton movement, if you post to the wall.')),
+          h('div', null, h('dt', null, 'Enforced, not promised'), h('dd', null, 'The page is only allowed to connect to its own site. The browser blocks anything else.'))))),
+
+    h('section', { class: 'rw-section rw-faq', 'aria-labelledby': 'rw-faq-title', 'data-reveal': '' },
+      sectionHead({ no: 6, eyebrow: 'Questions', title: 'Questions', id: 'rw-faq-title' }),
+      h('div', { class: 'rw-faq__list' },
+        faq('Is my video uploaded?', 'No. It is recorded and read in your browser, and it is thrown away on refresh unless you press Save. Only the pixelated stills for Gemini, and the name, score and skeleton you choose to post, ever leave the device.'),
+        faq('Do I need a special camera?', 'Any webcam works. An iPhone through Continuity Camera gives the smoothest picture. Put it at about hip height, sideways, with the light in front of you.'),
+        faq('Why 70 points measured and 30 of opinion?', 'Most of what makes a runway walk can be measured: where the feet land, the rhythm, how still the head and shoulders are. Presence and style cannot, so a judge gets a minority of the marks and never the total.'),
+        faq('What does the grade mean?', 'It is a line for the score, from “Just passing through” to “Front row silence”. It describes the walk on these rules, not the person.'),
+        faq('Can I remove my walk from the wall?', 'Yes, from the walk’s own page, with the account or device that posted it. The post and its movement data are deleted.'),
+        faq('Does it work on a phone?', 'Yes, in a recent Safari or Chrome. The tracker is slower there, so the walk is scored at a lower frame rate; a laptop with an iPhone as the camera is best.'),
+        faq('Who made this?', 'Krishna, at HackTrent 2026. It is a game and a measurement toy, not a casting tool.'))),
 
     h('section', { class: 'rw-section rw-recent', 'aria-labelledby': 'rw-recent-title', 'data-reveal': '' },
       recentHead,
@@ -254,7 +299,7 @@ export function homeScreen(root) {
   );
 
   // The heading of the saved walks block depends on whether there are any, so it starts as the plain title.
-  const plainRecentHead = () => sectionHead({ title: 'Your saved walks', id: 'rw-recent-title' });
+  const plainRecentHead = () => sectionHead({ no: 7, eyebrow: 'On this device', title: 'Your saved walks', id: 'rw-recent-title' });
   recentHead.replaceChildren(plainRecentHead());
 
   artSvg('divider.svg', { decorative: true, className: 'rw-cta__divider' })
@@ -311,6 +356,8 @@ export function homeScreen(root) {
         return;
       }
       recentHead.replaceChildren(sectionHead({
+        no: 7,
+        eyebrow: 'On this device',
         title: 'Your saved walks',
         id: 'rw-recent-title',
         action: h('a', { class: 'rw-btn rw-btn--quiet', href: '#/history' }, 'See all'),

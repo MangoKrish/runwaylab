@@ -12,9 +12,10 @@ RunwayLab includes the following in `vendor/`.
 
 - **mp4box.js** 0.5.4, by GPAC. BSD-3-Clause. Unmodified, except that the source map link was removed.
 
-## Font
+## Fonts
 
 - **Be Vietnam Pro**, by Lam Bao, Tony Le and ViệtAnh Nguyễn. SIL Open Font License 1.1. The licence is at `vendor/fonts/OFL.txt`.
+- **Bodoni Moda**, by Indestructible Type (Owen Earl). SIL Open Font License 1.1, the same licence file. Used for the display type and the score.
 
 ## Music
 

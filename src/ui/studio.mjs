@@ -73,6 +73,7 @@ export function studioScreen(root, app) {
   const stageHint = h('p', { class: 'rw-stage__hint' }, 'Allow the camera in your browser\'s bar above');
   const stage = h('div', { class: 'rw-stage rw-on-stage' },
     video, canvas, art,
+    h('p', { class: 'rw-stage__plateno', 'aria-hidden': 'true' }, 'Plate ', h('b', null, 'II')),
     h('span', { class: 'rw-stage__ring', 'aria-hidden': 'true' }),
     h('p', { class: 'rw-stage__tag', 'aria-hidden': 'true' }, 'Live'),
     timer, distance, count, stageCta, prompt);
