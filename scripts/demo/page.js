@@ -206,7 +206,134 @@
     c.restore();
   }
 
-  function titleCard(a, t, kind) {
+  const SERIF = '"Bodoni Moda", Georgia, serif';
+
+  /** The plate frame from the site: a cream rule, an inner hairline, inset from the edge of the frame. */
+  function plateFrame(a) {
+    c.save();
+    c.globalAlpha = a;
+    c.strokeStyle = 'rgba(244,237,224,0.55)';
+    c.lineWidth = 2;
+    c.strokeRect(56, 56, OW - 112, OH - 112);
+    c.strokeStyle = 'rgba(244,237,224,0.16)';
+    c.lineWidth = 1;
+    c.strokeRect(64.5, 64.5, OW - 129, OH - 129);
+    c.restore();
+  }
+
+  /** The dashed gold floor tape from the hero, drawn left to right as u goes from 0 to 1. */
+  function floorTape(cx, y, w, u) {
+    if (u <= 0) return;
+    c.save();
+    c.beginPath();
+    c.rect(cx - w / 2, y - 4, w * Math.min(1, u), 8);
+    c.clip();
+    c.fillStyle = APRICOT;
+    for (let x = cx - w / 2; x < cx + w / 2; x += 34) c.fillRect(x, y - 1.5, 22, 3);
+    c.restore();
+  }
+
+  /** A name set like the site's masthead: the first part upright, "Lab" in italic gold. */
+  function masthead(y, size, alpha) {
+    c.save();
+    c.globalAlpha = alpha;
+    c.textBaseline = 'alphabetic';
+    c.font = `600 ${size}px ${SERIF}`;
+    const a = c.measureText('Runway').width;
+    c.font = `italic 400 ${size}px ${SERIF}`;
+    const b = c.measureText('Lab').width;
+    const x = OW / 2 - (a + b) / 2;
+    c.textAlign = 'left';
+    c.font = `600 ${size}px ${SERIF}`;
+    c.fillStyle = CREAM;
+    c.fillText('Runway', x, y);
+    c.font = `italic 400 ${size}px ${SERIF}`;
+    c.fillStyle = APRICOT;
+    c.fillText('Lab', x + a, y);
+    c.restore();
+  }
+
+  function label(text, y, alpha) {
+    c.save();
+    c.globalAlpha = alpha;
+    c.fillStyle = APRICOT;
+    c.font = `600 24px ${FONT}`;
+    c.textAlign = 'center';
+    c.letterSpacing = '6px';
+    c.fillText(text, OW / 2, y);
+    c.restore();
+  }
+
+  function serifCard(a, t, kind) {
+    if (a <= 0) return;
+    c.save();
+    c.globalAlpha = a;
+    background(t);
+    c.restore();
+    plateFrame(a);
+    const rise = (1 - out(t / 0.9)) * 24;
+    if (kind === 'intro') {
+      label('HACKTRENT 2026  ·  PLATE I', OH / 2 - 150, a * out(t / 0.6));
+      masthead(OH / 2 + 40 + rise, 176, a);
+      floorTape(OW / 2, OH / 2 + 82, 640, out((t - 0.5) / 0.9));
+      c.save();
+      c.globalAlpha = a * out((t - 0.8) / 0.6);
+      c.fillStyle = '#D3CBBC';
+      c.font = `italic 400 48px ${SERIF}`;
+      c.textAlign = 'center';
+      c.fillText('Can code judge a runway walk?', OW / 2, OH / 2 + 168);
+      c.restore();
+    } else {
+      masthead(OH / 2 - 40 + rise, 150, a);
+      floorTape(OW / 2, OH / 2 + 2, 560, out((t - 0.3) / 0.8));
+      c.save();
+      c.textAlign = 'center';
+      c.globalAlpha = a * out((t - 0.3) / 0.6);
+      c.fillStyle = APRICOT;
+      c.font = `600 38px ${FONT}`;
+      c.fillText('runwaylab-mu.vercel.app', OW / 2, OH / 2 + 74);
+      c.globalAlpha = a * out((t - 0.6) / 0.6);
+      c.fillStyle = '#D3CBBC';
+      c.font = `500 28px ${FONT}`;
+      c.fillText('Pose tracking in the browser  ·  Gemini  ·  Tiger Data  ·  Auth0', OW / 2, OH / 2 + 136);
+      c.globalAlpha = a * out((t - 0.9) / 0.6);
+      if (fox) c.drawImage(fox, OW / 2 - 150, OH - 196, 56, 56);
+      c.fillStyle = CREAM;
+      c.font = `600 28px ${FONT}`;
+      c.textAlign = 'left';
+      c.fillText('Made by Annontrix', OW / 2 - 80, OH - 158);
+      c.restore();
+    }
+  }
+
+  /** The card in the music's break: the film holds its breath, then the wall lands on the beat. */
+  function breakCard(b, t) {
+    if (!b) return;
+    const a = out(b.age / 0.3);
+    c.save();
+    c.globalAlpha = a;
+    c.fillStyle = '#0B1428';
+    c.fillRect(0, 0, OW, OH);
+    c.restore();
+    plateFrame(a * 0.8);
+    const u = b.age / b.life;
+    label('07  ·  THE WALL', OH / 2 - 110, a);
+    c.save();
+    c.globalAlpha = a;
+    c.textAlign = 'center';
+    c.fillStyle = CREAM;
+    c.font = `600 112px ${SERIF}`;
+    c.fillText('Then it goes', OW / 2, OH / 2 + 10 - (1 - out(b.age / 0.6)) * 18);
+    c.globalAlpha = out((b.age - 0.45) / 0.5);
+    c.fillStyle = APRICOT;
+    c.font = `italic 400 112px ${SERIF}`;
+    c.fillText('on the wall.', OW / 2, OH / 2 + 130);
+    c.restore();
+    floorTape(OW / 2, OH / 2 + 172, 520, out((u - 0.35) / 0.6));
+  }
+
+  function titleCard(a, t, kind, serif) {
+    if (serif) return serifCard(a, t, kind);
     if (a <= 0) return;
     c.save();
     c.globalAlpha = a;
@@ -248,6 +375,12 @@
 
   window.renderFrame = async (s) => {
     const img = s.src === null ? null : await frame(s.src);
+    c.save();
+    if (s.punch) {
+      c.translate(OW / 2, OH / 2);
+      c.scale(1 + s.punch, 1 + s.punch);
+      c.translate(-OW / 2, -OH / 2);
+    }
     background(s.t);
     if (s.windowAlpha > 0) {
       c.save();
@@ -262,10 +395,12 @@
       }
       c.restore();
     }
+    c.restore();
     chip(s.chip);
     caption(s.caption);
-    titleCard(s.intro, s.t, 'intro');
-    titleCard(s.outro, s.outroT, 'outro');
+    breakCard(s.brk, s.t);
+    titleCard(s.intro, s.t, 'intro', s.serif);
+    titleCard(s.outro, s.outroT, 'outro', s.serif);
     return canvas.toDataURL('image/jpeg', 0.92).slice(23);
   };
 })();

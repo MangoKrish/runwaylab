@@ -100,7 +100,8 @@ async function click() {
 async function rectOf(selectorJs) {
   return js(`(() => { const el = ${selectorJs}; if (!el) return null; el.scrollIntoView({ block: 'nearest' }); const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })()`);
 }
-const byText = (text, sel = 'button, a, label') => `[...document.querySelectorAll(${JSON.stringify(sel)})].find((e) => e.offsetParent && e.innerText.trim().includes(${JSON.stringify(text)}))`;
+// Case-insensitive, since the header sets its links in capitals with CSS and innerText reports them that way.
+const byText = (text, sel = 'button, a, label') => `[...document.querySelectorAll(${JSON.stringify(sel)})].find((e) => e.offsetParent && e.innerText.trim().toLowerCase().includes(${JSON.stringify(text.toLowerCase())}))`;
 async function clickOn(selectorJs, ms = 800) {
   const r = await rectOf(selectorJs);
   if (!r) throw new Error(`Not on the page: ${selectorJs}`);
@@ -232,6 +233,7 @@ mark('wall');
 await wheel(-3000, 900);
 await clickOn(byText('The wall', 'a'));
 await until(`document.querySelectorAll('.rw-wallcard').length > 3`, 20000, 'wall');
+mark('wall-shown');
 await sleep(1200);
 const stats = await rectOf(`document.querySelector('.rw-stats')`);
 if (stats) {
